@@ -1,0 +1,29 @@
+{
+  "name": "Übergabeprotokoll – E-Konstruktion",
+  "short_name": "Übergabe",
+  "description": "Industrielle Dokumentation für Maschinen- und Stationskonfigurationen mit E/A-Zuordnung und Exportfunktionen.",
+  "start_url": "./ubergabeprotokoll.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f4f4f2",
+  "theme_color": "#0078d4",
+  "lang": "de",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": []
+}

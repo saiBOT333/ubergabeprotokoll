@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background tile -->
+  <rect width="512" height="512" rx="108" fill="#0078d4"/>
+  <!-- Subtle inner gradient -->
+  <rect width="512" height="512" rx="108" fill="url(#g)" opacity="0.18"/>
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fff"/>
+      <stop offset="100%" stop-color="#0050a0"/>
+    </linearGradient>
+  </defs>
+  <!-- Lightning bolt -->
+  <path d="M296 88 L156 276 h104 l-52 148 200-236 H300 Z"
+        fill="#ffffff" opacity="0.95"/>
+</svg>
