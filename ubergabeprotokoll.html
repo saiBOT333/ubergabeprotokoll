@@ -2,175 +2,184 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Übergabeprotokoll – E-Konstruktion</title>
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <style>
-    /* ════════════════════════════════════════════════════════════════
-       Fluent Design System 2  ·  Microsoft 365 Language
-       Refined: rounded corners · acrylic sidebar · diffused shadows
-       · SVG line-icons · strict type hierarchy
-    ════════════════════════════════════════════════════════════════ */
+    /* ═══════════════════════════════════════════════════════════════
+       Fluent Design System 2  ·  Elegant Edition
+       Responsive: Mobile drawer · Tablet · Desktop
+    ═══════════════════════════════════════════════════════════════ */
     :root {
-      /* ── Brand ─────────────────────────────────────────────────── */
-      --f-blue:          #0078d4;
-      --f-blue-hover:    #106ebe;
-      --f-blue-pressed:  #005a9e;
-      --f-blue-light:    #deecf9;
-      --f-blue-lighter:  #eff6fc;
+      --blue:          #0078d4;
+      --blue-h:        #106ebe;
+      --blue-p:        #005a9e;
+      --blue-lt:       #deecf9;
+      --blue-ltr:      #eff6fc;
 
-      /* ── Neutrals ───────────────────────────────────────────────── */
-      --f-bg:            #f3f2f1;
-      --f-surface:       #ffffff;
-      --f-surface-2:     #fafafa;
-      --f-border-subtle: #f0efee;
-      --f-border:        #e8e6e4;
-      --f-border-strong: #c8c6c4;
-      --f-hover:         #f5f4f3;
-      --f-selection:     #deecf9;
-      --f-selection-2:   #cce0f5;
+      --bg:            #f4f4f2;
+      --surface:       #ffffff;
+      --surface-tint:  #fafafa;
+      --border-sub:    #f0efed;
+      --border:        #e5e3e0;
+      --border-str:    #c8c6c3;
+      --hover:         rgba(0,0,0,.04);
+      --sel:           #ddeeff;
+      --sel-str:       #cce0f5;
 
-      /* ── Text ───────────────────────────────────────────────────── */
-      --f-text:          #242424;
-      --f-text-2:        #5c5a58;
-      --f-text-3:        #a09e9c;
+      --text:          #1a1a1a;
+      --text-2:        #555250;
+      --text-3:        #9e9c9a;
 
-      /* ── Shadows  (Fluent 2 — soft, diffused) ───────────────────── */
-      --f-shadow-2:  0 1px 2px rgba(0,0,0,.10), 0 0px 1px rgba(0,0,0,.06);
-      --f-shadow-4:  0 2px 4px rgba(0,0,0,.08), 0 0px 2px rgba(0,0,0,.05);
-      --f-shadow-8:  0 4px 8px rgba(0,0,0,.10), 0 1px 3px rgba(0,0,0,.06);
-      --f-shadow-16: 0 8px 16px rgba(0,0,0,.12), 0 2px 4px rgba(0,0,0,.07);
-      --f-shadow-64: 0 32px 64px rgba(0,0,0,.18), 0 6px 20px rgba(0,0,0,.10);
+      --sh-1: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
+      --sh-2: 0 2px 6px rgba(0,0,0,.08), 0 1px 3px rgba(0,0,0,.05);
+      --sh-4: 0 4px 12px rgba(0,0,0,.09), 0 1px 4px rgba(0,0,0,.05);
+      --sh-8: 0 8px 24px rgba(0,0,0,.12), 0 2px 6px rgba(0,0,0,.06);
+      --sh-modal: 0 24px 64px rgba(0,0,0,.18), 0 8px 24px rgba(0,0,0,.10);
 
-      /* ── Radii  (Fluent 2 — generous, consistent) ───────────────── */
-      --r-xs: 2px;
-      --r-sm: 4px;
-      --r-md: 6px;
-      --r-lg: 8px;
-      --r-xl: 12px;
+      --r-xs: 3px;
+      --r-sm: 6px;
+      --r-md: 8px;
+      --r-lg: 12px;
+      --r-xl: 16px;
+      --r-pill: 100px;
 
-      /* ── Level accent colors  (M365 product palette) ────────────── */
-      --lv0: #0078d4;   /* Office Blue     · Station              */
-      --lv1: #107c10;   /* Excel Green     · Bauraum              */
-      --lv2: #8764b8;   /* OneNote Purple  · Funktionsdefinition  */
-      --lv3: #ca5010;   /* Dynamics Orange · Funktion             */
-      --lv4: #005b70;   /* Azure Teal      · Zustand              */
+      --lv0: #0078d4;
+      --lv1: #107c10;
+      --lv2: #8764b8;
+      --lv3: #ca5010;
+      --lv4: #005b70;
+
+      --lv0-lt: #deedf9;
+      --lv1-lt: #dff6dd;
+      --lv2-lt: #ede8f5;
+      --lv3-lt: #f7e6db;
+      --lv4-lt: #d9ebee;
+
+      --sidebar-w: 300px;
+      --toolbar-h: 52px;
+      --legend-h:  34px;
+      --trans: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    html { height: 100%; }
+
     body {
       font-family: 'Segoe UI Variable', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--f-bg);
-      height: 100vh;
+      background: var(--bg);
+      height: 100%;
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      color: var(--f-text);
+      color: var(--text);
       font-size: 14px;
-      line-height: 1.45;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* ── Branded top stripe ──────────────────────────────────────── */
+    /* ── Top accent stripe ──────────────────────────────────────── */
     body::before {
       content: '';
-      display: block;
-      height: 3px;
-      background: linear-gradient(90deg, var(--f-blue) 0%, #50a8e0 100%);
-      flex-shrink: 0;
       position: fixed;
       top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--blue) 0%, #4da8e0 60%, #50c8c8 100%);
+      z-index: 300;
+      flex-shrink: 0;
+    }
+
+    /* ═══════════════════ TOOLBAR ═══════════════════════════════ */
+    #toolbar {
+      height: var(--toolbar-h);
+      margin-top: 3px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      box-shadow: var(--sh-1);
+      display: flex;
+      align-items: center;
+      padding: 0 8px 0 12px;
+      gap: 4px;
+      flex-shrink: 0;
+      position: relative;
       z-index: 200;
     }
 
-    /* ── Toolbar ─────────────────────────────────────────────────── */
-    #toolbar {
-      background: var(--f-surface);
-      color: var(--f-text);
-      padding: 0 10px;
-      display: flex;
-      align-items: center;
-      gap: 2px;
+    .tb-hamburger {
+      display: none;
+      width: 36px; height: 36px;
+      border: none; background: transparent;
+      border-radius: var(--r-sm);
+      cursor: pointer;
+      color: var(--text-2);
+      align-items: center; justify-content: center;
       flex-shrink: 0;
-      height: 48px;
-      margin-top: 3px;
-      border-bottom: 1px solid var(--f-border);
-      box-shadow: var(--f-shadow-4);
-      position: relative;
-      z-index: 100;
+      transition: background var(--trans);
     }
+    .tb-hamburger:hover { background: var(--hover); }
 
-    .toolbar-logo {
-      width: 30px; height: 30px;
-      background: var(--f-blue);
+    .tb-logo {
+      width: 32px; height: 32px;
+      background: var(--blue);
       border-radius: var(--r-sm);
       display: flex; align-items: center; justify-content: center;
       color: #fff;
       flex-shrink: 0;
-      margin-right: 6px;
+      margin-right: 4px;
     }
 
-    .toolbar-title {
+    .tb-title {
       font-size: 14px;
       font-weight: 600;
-      color: var(--f-text);
+      color: var(--text);
       white-space: nowrap;
-      margin-right: 8px;
+      margin-right: 6px;
       letter-spacing: -0.01em;
     }
 
     #pname-input {
       background: transparent;
       border: 1px solid transparent;
-      color: var(--f-text);
-      padding: 4px 8px;
+      color: var(--text);
+      padding: 5px 8px;
       font-size: 13px;
       font-family: inherit;
-      font-weight: 400;
-      width: 240px;
+      width: 220px;
       border-radius: var(--r-sm);
-      transition: border-color 0.12s, background 0.12s, box-shadow 0.12s;
+      transition: border-color var(--trans), background var(--trans), box-shadow var(--trans);
     }
-    #pname-input:hover {
-      background: var(--f-hover);
-      border-color: var(--f-border-strong);
-    }
-    #pname-input:focus {
-      outline: none;
-      background: var(--f-surface);
-      border-color: var(--f-blue);
-      box-shadow: 0 0 0 1px var(--f-blue);
-    }
-    #pname-input::placeholder { color: var(--f-text-3); }
+    #pname-input:hover  { background: var(--hover); border-color: var(--border-str); }
+    #pname-input:focus  { outline: none; background: var(--surface); border-color: var(--blue); box-shadow: 0 0 0 2px var(--blue-ltr); }
+    #pname-input::placeholder { color: var(--text-3); }
 
-    .toolbar-sep { flex: 1; }
+    .tb-sep   { flex: 1; }
 
-    .toolbar-saved {
+    .tb-saved {
       font-size: 11px;
-      color: var(--f-text-3);
+      color: var(--text-3);
       white-space: nowrap;
       padding: 0 8px;
     }
 
     .tb-divider {
-      width: 1px;
-      height: 20px;
-      background: var(--f-border-strong);
+      width: 1px; height: 20px;
+      background: var(--border-str);
       flex-shrink: 0;
-      margin: 0 4px;
-      opacity: 0.6;
+      margin: 0 2px;
+      opacity: 0.5;
     }
 
-    /* ── Buttons ─────────────────────────────────────────────────── */
+    /* ── Buttons ─────────────────────────────────────────────── */
     .btn {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 0 11px;
-      height: 32px;
+      padding: 0 12px;
+      height: 34px;
       border: 1px solid transparent;
       border-radius: var(--r-sm);
       cursor: pointer;
@@ -178,548 +187,668 @@
       font-weight: 400;
       font-family: inherit;
       white-space: nowrap;
-      color: var(--f-text);
+      color: var(--text);
       background: transparent;
-      transition: background 0.1s, border-color 0.1s, color 0.1s, box-shadow 0.1s;
+      transition: background var(--trans), border-color var(--trans), color var(--trans), box-shadow var(--trans);
       user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
-    .btn:hover  { background: var(--f-hover); border-color: var(--f-border-strong); }
-    .btn:active { background: var(--f-border); }
+    .btn:hover  { background: var(--hover); border-color: var(--border-str); }
+    .btn:active { background: var(--border); transform: scale(0.98); }
 
-    .btn-ghost { color: var(--f-text); border-color: transparent; }
-    .btn-ghost:hover { background: var(--f-hover); border-color: var(--f-border-strong); }
+    .btn-ghost { color: var(--text); }
+    .btn-ghost:hover { background: var(--hover); border-color: var(--border-str); }
 
-    .btn-blue {
-      background: var(--f-blue);
-      border-color: var(--f-blue);
-      color: #fff;
-      font-weight: 600;
-      box-shadow: var(--f-shadow-2);
-    }
-    .btn-blue:hover  { background: var(--f-blue-hover); border-color: var(--f-blue-hover); box-shadow: var(--f-shadow-4); }
-    .btn-blue:active { background: var(--f-blue-pressed); box-shadow: none; }
-
-    .btn-green {
-      background: #217346; border-color: #217346;
+    .btn-primary {
+      background: var(--blue); border-color: var(--blue);
       color: #fff; font-weight: 600;
-      box-shadow: var(--f-shadow-2);
+      box-shadow: var(--sh-1);
     }
-    .btn-green:hover { background: #1e6840; border-color: #1e6840; box-shadow: var(--f-shadow-4); }
+    .btn-primary:hover  { background: var(--blue-h); border-color: var(--blue-h); box-shadow: var(--sh-2); }
+    .btn-primary:active { background: var(--blue-p); box-shadow: none; }
 
-    .btn-red {
-      background: #a4262c; border-color: #a4262c;
-      color: #fff; font-weight: 600;
-      box-shadow: var(--f-shadow-2);
+    .btn-green  { background: #217346; border-color: #217346; color: #fff; font-weight: 600; box-shadow: var(--sh-1); }
+    .btn-green:hover  { background: #1d6840; box-shadow: var(--sh-2); }
+
+    .btn-red    { background: #a4262c; border-color: #a4262c; color: #fff; font-weight: 600; box-shadow: var(--sh-1); }
+    .btn-red:hover    { background: #8f2023; box-shadow: var(--sh-2); }
+
+    .btn-subtle {
+      color: var(--text-2);
+      border-color: var(--border-str);
+      background: var(--surface);
     }
-    .btn-red:hover { background: #8f2023; border-color: #8f2023; box-shadow: var(--f-shadow-4); }
+    .btn-subtle:hover { background: var(--blue-ltr); border-color: var(--blue); color: var(--blue); }
 
-    .btn-amber {
-      color: var(--f-text);
-      border-color: var(--f-border-strong);
-      background: var(--f-surface);
-    }
-    .btn-amber:hover { background: var(--f-selection); border-color: var(--f-blue); color: var(--f-blue); }
+    .btn-sm { padding: 0 10px; height: 28px; font-size: 12px; }
 
-    .btn-purple { background: #8764b8; border-color: #8764b8; color: #fff; font-weight: 600; }
-    .btn-sm     { padding: 0 8px; height: 26px; font-size: 12px; }
+    /* ── Toolbar label (btn with text label) ─────────────────── */
+    .tb-label { display: inline; }
 
-    /* ── Legend bar ──────────────────────────────────────────────── */
+    /* ═══════════════════ LEGEND BAR ════════════════════════════ */
     #legend {
+      height: var(--legend-h);
       display: flex;
       align-items: center;
-      gap: 14px;
-      padding: 5px 16px;
-      background: var(--f-surface);
-      border-bottom: 1px solid var(--f-border);
+      gap: 12px;
+      padding: 0 16px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
       font-size: 11px;
       flex-shrink: 0;
-      color: var(--f-text-2);
+      color: var(--text-2);
+      overflow-x: auto;
+      scrollbar-width: none;
     }
-    .leg-item { display: flex; align-items: center; gap: 5px; }
-    .leg-dot  {
-      width: 8px; height: 8px;
-      border-radius: var(--r-xs);
-      flex-shrink: 0;
-    }
-    .leg-sep  { flex: 1; }
-    .leg-hint { color: var(--f-text-3); font-size: 10.5px; }
+    #legend::-webkit-scrollbar { display: none; }
 
-    /* ── Main layout ─────────────────────────────────────────────── */
+    .leg-item { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+    .leg-dot  { width: 8px; height: 8px; border-radius: var(--r-xs); flex-shrink: 0; }
+    .leg-sep  { flex: 1; min-width: 8px; }
+    .leg-hint { color: var(--text-3); font-size: 10.5px; white-space: nowrap; }
+
+    /* ═══════════════════ MAIN LAYOUT ═══════════════════════════ */
     #main {
       display: flex;
       flex: 1;
       overflow: hidden;
+      position: relative;
     }
 
-    /* ── Tree panel  (Acrylic / Mica effect) ─────────────────────── */
+    /* ── Sidebar overlay (mobile) ────────────────────────────── */
+    .sidebar-scrim {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 149;
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+      opacity: 0;
+      transition: opacity var(--trans);
+    }
+    .sidebar-scrim.visible { opacity: 1; }
+
+    /* ═══════════════════ TREE PANEL ════════════════════════════ */
     #tree-panel {
-      width: 300px;
+      width: var(--sidebar-w);
       min-width: 180px;
-      background: rgba(255, 255, 255, 0.82);
-      backdrop-filter: blur(24px) saturate(180%);
-      -webkit-backdrop-filter: blur(24px) saturate(180%);
-      border-right: 1px solid var(--f-border);
+      flex-shrink: 0;
+      background: rgba(255,255,255,0.80);
+      backdrop-filter: blur(28px) saturate(180%);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      transition: transform var(--trans), box-shadow var(--trans);
     }
 
     .tree-hdr {
-      padding: 8px 10px;
-      background: rgba(255,255,255,0.60);
-      border-bottom: 1px solid var(--f-border);
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.55);
+      border-bottom: 1px solid var(--border-sub);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      font-size: 10.5px;
+      font-size: 10px;
       font-weight: 700;
-      color: var(--f-text-2);
+      color: var(--text-3);
       text-transform: uppercase;
-      letter-spacing: 0.07em;
+      letter-spacing: 0.09em;
       flex-shrink: 0;
     }
 
     .tree-body {
       flex: 1;
       overflow-y: auto;
-      padding: 4px 0;
+      padding: 6px 0 12px;
     }
 
     .tree-empty {
-      padding: 32px 18px;
+      padding: 40px 20px;
       text-align: center;
-      color: var(--f-text-3);
+      color: var(--text-3);
       font-size: 13px;
-      line-height: 1.75;
+      line-height: 1.8;
     }
+    .tree-empty strong { color: var(--text-2); }
 
-    /* ── Tree nodes ──────────────────────────────────────────────── */
+    /* ── Tree nodes ──────────────────────────────────────────── */
     .tn {
       display: flex;
       align-items: center;
-      padding: 3px 6px 3px 0;
+      padding: 0 8px 0 0;
       cursor: pointer;
       font-size: 13px;
-      gap: 2px;
+      gap: 1px;
+      min-height: 32px;
       border-left: 3px solid transparent;
-      min-height: 28px;
       border-radius: 0 var(--r-sm) var(--r-sm) 0;
-      margin: 0 4px 0 0;
-      transition: background 0.1s;
+      margin: 1px 6px 1px 0;
+      transition: background var(--trans);
+      -webkit-tap-highlight-color: transparent;
     }
-    .tn:hover { background: rgba(0,0,0,0.04); }
-    .tn.sel   {
-      background: var(--f-selection);
-      border-left-width: 3px;
-    }
+    .tn:hover { background: rgba(0,0,0,.04); }
+    .tn.sel   { background: var(--sel); }
 
     .tn-l0 { padding-left: 4px;  border-left-color: var(--lv0); }
-    .tn-l1 { padding-left: 20px; border-left-color: var(--lv1); }
-    .tn-l2 { padding-left: 36px; border-left-color: var(--lv2); }
-    .tn-l3 { padding-left: 52px; border-left-color: var(--lv3); }
-    .tn-l4 { padding-left: 68px; border-left-color: var(--lv4); }
+    .tn-l1 { padding-left: 22px; border-left-color: var(--lv1); }
+    .tn-l2 { padding-left: 38px; border-left-color: var(--lv2); }
+    .tn-l3 { padding-left: 54px; border-left-color: var(--lv3); }
+    .tn-l4 { padding-left: 70px; border-left-color: var(--lv4); }
 
     .tn-arr {
-      width: 14px; height: 14px;
+      width: 16px; height: 16px;
       display: flex; align-items: center; justify-content: center;
-      color: var(--f-text-3); flex-shrink: 0;
+      color: var(--text-3); flex-shrink: 0;
       border-radius: var(--r-xs);
-      transition: color 0.1s;
+      transition: color var(--trans), background var(--trans);
     }
-    .tn-arr:hover { background: var(--f-border-strong); color: var(--f-text); }
+    .tn-arr:hover { background: var(--border); color: var(--text); }
     .tn-arr.ph    { visibility: hidden; }
 
     .tn-ico {
       width: 16px; height: 16px;
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
-      opacity: 0.75;
+      opacity: 0.65;
+      transition: opacity var(--trans);
     }
+    .tn.sel .tn-ico { opacity: 1; color: var(--blue); }
 
     .tn-lbl {
-      flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      color: var(--f-text); font-size: 13px;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text);
+      font-size: 13px;
+      padding: 0 4px;
     }
-    .tn.sel .tn-lbl { color: var(--f-blue); font-weight: 600; }
-    .tn.sel .tn-ico { opacity: 1; color: var(--f-blue); }
+    .tn.sel .tn-lbl { color: var(--blue); font-weight: 600; }
 
     .tn-lbl-input {
       flex: 1;
-      border: 1px solid var(--f-blue);
+      border: 1.5px solid var(--blue);
       border-radius: var(--r-sm);
-      padding: 1px 6px;
+      padding: 2px 7px;
       font-size: 12px;
       outline: none;
-      color: var(--f-text);
-      background: var(--f-surface);
-      box-shadow: 0 0 0 1px var(--f-blue);
+      color: var(--text);
+      background: var(--surface);
+      box-shadow: 0 0 0 3px var(--blue-ltr);
       font-family: inherit;
     }
 
-    .tn-acts { display: none; gap: 2px; flex-shrink: 0; }
+    .tn-acts { display: none; gap: 2px; flex-shrink: 0; padding-right: 2px; }
     .tn:hover .tn-acts, .tn.sel .tn-acts { display: flex; }
 
     .tn-btn {
-      width: 18px; height: 18px;
+      width: 20px; height: 20px;
       border: 1px solid transparent;
       border-radius: var(--r-xs);
       cursor: pointer;
-      font-size: 11px; font-weight: 700;
+      font-size: 12px; font-weight: 700;
       display: flex; align-items: center; justify-content: center;
       background: transparent;
-      color: var(--f-text-2);
-      transition: background 0.1s, color 0.1s;
+      color: var(--text-3);
+      transition: background var(--trans), color var(--trans), border-color var(--trans);
     }
     .tn-btn-add:hover { background: #dff6dd; color: #107c10; border-color: #107c10; }
     .tn-btn-del:hover { background: #fde7e9; color: #a4262c; border-color: #a4262c; }
 
     .tree-add-root {
-      margin: 6px 6px;
-      padding: 6px 10px;
-      border: 1px dashed var(--f-border-strong);
+      margin: 8px 8px 0;
+      padding: 7px 12px;
+      border: 1.5px dashed var(--border-str);
       border-radius: var(--r-md);
       background: none;
       cursor: pointer;
-      color: var(--f-text-2);
-      font-size: 12px;
-      width: calc(100% - 12px);
-      text-align: left;
+      color: var(--text-3);
+      font-size: 12.5px;
       font-family: inherit;
-      transition: all 0.1s;
+      width: calc(100% - 16px);
+      text-align: left;
+      transition: all var(--trans);
     }
     .tree-add-root:hover {
-      background: var(--f-blue-lighter);
-      border-color: var(--f-blue);
-      color: var(--f-blue);
+      background: var(--blue-ltr);
+      border-color: var(--blue);
+      color: var(--blue);
     }
 
-    /* ── Detail / Content panel ──────────────────────────────────── */
+    /* ═══════════════════ DETAIL PANEL ═════════════════════════ */
     #detail-panel {
       flex: 1;
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      background: var(--f-bg);
+      background: var(--bg);
+      min-width: 0;
     }
 
     .det-hdr {
-      padding: 12px 20px;
-      background: var(--f-surface);
-      border-bottom: 1px solid var(--f-border);
+      padding: 14px 20px 12px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
       flex-shrink: 0;
-      box-shadow: var(--f-shadow-2);
+      box-shadow: var(--sh-1);
+    }
+
+    .det-back-btn {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--blue);
+      font-size: 13px;
+      font-family: inherit;
+      padding: 0 0 10px 0;
+      -webkit-tap-highlight-color: transparent;
     }
 
     .det-bc {
       display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
-      font-size: 11px; color: var(--f-text-3); margin-bottom: 5px;
+      font-size: 11px; color: var(--text-3); margin-bottom: 6px;
     }
-    .det-bc-sep  { color: var(--f-border-strong); }
-    .det-bc-item { color: var(--f-text-2); }
+    .det-bc-sep  { color: var(--border-str); }
+    .det-bc-item { color: var(--text-2); }
 
     .det-title-row { display: flex; align-items: center; gap: 10px; }
 
     .det-badge {
       display: inline-flex; align-items: center;
-      padding: 2px 8px;
-      border-radius: var(--r-sm);
+      padding: 3px 10px;
+      border-radius: var(--r-pill);
       font-size: 10px; font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.07em;
       flex-shrink: 0;
     }
-    .b-station  { background: var(--lv0); color: #fff; }
-    .b-bauraum  { background: var(--lv1); color: #fff; }
-    .b-funkdef  { background: var(--lv2); color: #fff; }
-    .b-funktion { background: var(--lv3); color: #fff; }
-    .b-zustand  { background: var(--lv4); color: #fff; }
+    .b-station  { background: var(--lv0);    color: #fff; }
+    .b-bauraum  { background: var(--lv1);    color: #fff; }
+    .b-funkdef  { background: var(--lv2);    color: #fff; }
+    .b-funktion { background: var(--lv3);    color: #fff; }
+    .b-zustand  { background: var(--lv4);    color: #fff; }
 
-    .det-title { font-size: 16px; font-weight: 600; color: var(--f-text); letter-spacing: -0.01em; }
+    .det-title {
+      font-size: 16px; font-weight: 600;
+      color: var(--text); letter-spacing: -0.015em;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
 
     .det-body {
       flex: 1;
       overflow-y: auto;
-      padding: 16px 20px;
+      padding: 16px 18px 24px;
     }
 
-    /* Empty state */
+    /* ── Empty state ─────────────────────────────────────────── */
     .det-empty {
       display: flex; flex-direction: column; align-items: center;
-      justify-content: center; height: 100%; color: var(--f-text-3);
-      text-align: center; gap: 12px;
+      justify-content: center; height: 100%;
+      text-align: center; gap: 14px;
+      padding: 20px;
     }
-    .det-empty-ico { opacity: 0.3; color: var(--f-text-2); }
-    .det-empty-ttl { font-size: 17px; font-weight: 600; color: var(--f-border-strong); }
-    .det-empty-txt { font-size: 13px; max-width: 280px; line-height: 1.65; color: var(--f-text-3); }
+    .det-empty-ico { color: var(--border-str); }
+    .det-empty-ttl { font-size: 17px; font-weight: 600; color: var(--border-str); }
+    .det-empty-txt { font-size: 13px; max-width: 260px; line-height: 1.7; color: var(--text-3); }
 
-    /* ── Cards ───────────────────────────────────────────────────── */
+    /* ═══════════════════ CARDS ═════════════════════════════════ */
     .card {
-      background: var(--f-surface);
+      background: var(--surface);
       border-radius: var(--r-md);
-      padding: 14px 16px;
+      padding: 16px;
       margin-bottom: 10px;
-      border: 1px solid var(--f-border);
-      box-shadow: var(--f-shadow-4);
+      border: 1px solid var(--border);
+      box-shadow: var(--sh-2);
+      transition: box-shadow var(--trans);
     }
+    .card:last-child { margin-bottom: 0; }
+
     .card-title {
-      font-size: 10.5px;
+      font-size: 10px;
       font-weight: 700;
-      color: var(--f-text-2);
+      color: var(--text-3);
       text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 10px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid var(--f-border-subtle);
+      letter-spacing: 0.1em;
+      margin-bottom: 12px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid var(--border-sub);
     }
 
-    /* ── Form elements ───────────────────────────────────────────── */
-    .fg { margin-bottom: 12px; }
+    /* ═══════════════════ FORM ELEMENTS ═════════════════════════ */
+    .fg          { margin-bottom: 12px; }
     .fg:last-child { margin-bottom: 0; }
 
     .flbl {
       display: block;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--f-text-2);
+      font-size: 12px; font-weight: 600;
+      color: var(--text-2);
       margin-bottom: 5px;
     }
 
     .finput, .ftextarea {
       width: 100%;
-      border: 1px solid var(--f-border-strong);
+      border: 1.5px solid var(--border-str);
       border-radius: var(--r-sm);
-      padding: 6px 10px;
+      padding: 7px 10px;
       font-size: 13px;
-      color: var(--f-text);
-      background: var(--f-surface);
+      color: var(--text);
+      background: var(--surface);
       font-family: inherit;
-      transition: border-color 0.12s, box-shadow 0.12s;
+      transition: border-color var(--trans), box-shadow var(--trans);
     }
-    .finput:hover, .ftextarea:hover { border-color: var(--f-text-2); }
-    .finput:focus, .ftextarea:focus {
+    .finput:hover, .ftextarea:hover  { border-color: var(--text-3); }
+    .finput:focus, .ftextarea:focus  {
       outline: none;
-      border-color: var(--f-blue);
-      box-shadow: 0 0 0 1px var(--f-blue);
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px var(--blue-ltr);
     }
-    .ftextarea { min-height: 72px; resize: vertical; }
+    .ftextarea { min-height: 76px; resize: vertical; }
 
-    /* Child summary list */
+    /* ── Child list ──────────────────────────────────────────── */
     .child-list { list-style: none; }
     .child-list li {
-      padding: 5px 0;
-      border-bottom: 1px solid var(--f-border-subtle);
-      font-size: 13px;
-      color: var(--f-text-2);
-      display: flex; align-items: center; gap: 6px;
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border-sub);
+      font-size: 13px; color: var(--text-2);
     }
     .child-list li:last-child { border-bottom: none; }
-    .child-list li svg { opacity: 0.6; flex-shrink: 0; }
-    .child-empty { color: var(--f-text-3); font-size: 12px; font-style: italic; padding: 4px 0; }
+    .child-list li svg { opacity: 0.5; flex-shrink: 0; }
+    .child-empty { color: var(--text-3); font-size: 12px; font-style: italic; padding: 6px 0; }
 
     .add-child-btn {
-      margin-top: 8px;
+      margin-top: 10px;
       width: 100%;
-      padding: 7px 10px;
-      border: 1px dashed var(--f-border-strong);
+      padding: 8px 12px;
+      border: 1.5px dashed var(--border-str);
       border-radius: var(--r-md);
       background: none;
       cursor: pointer;
-      color: var(--f-text-2);
+      color: var(--text-3);
       font-size: 13px;
       font-family: inherit;
       text-align: left;
-      transition: all 0.1s;
+      transition: all var(--trans);
+      -webkit-tap-highlight-color: transparent;
     }
     .add-child-btn:hover {
-      background: var(--f-blue-lighter);
-      border-color: var(--f-blue);
-      color: var(--f-blue);
+      background: var(--blue-ltr);
+      border-color: var(--blue);
+      color: var(--blue);
     }
 
-    /* ── E/A Toggles ─────────────────────────────────────────────── */
+    /* ═══════════════════ E/A TOGGLES ═══════════════════════════ */
     .ea-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
+      gap: 10px;
     }
-    .ea-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-    .ea-key  { font-size: 11px; font-weight: 700; color: var(--f-text-2); letter-spacing: 0.02em; }
+    .ea-item { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+    .ea-key  { font-size: 10.5px; font-weight: 700; color: var(--text-2); letter-spacing: 0.03em; }
     .ea-toggle {
-      width: 46px; height: 30px;
+      width: 48px; height: 32px;
       border-radius: var(--r-sm);
-      border: 1px solid var(--f-border-strong);
+      border: 1.5px solid var(--border-str);
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       font-size: 14px; font-weight: 700;
-      transition: all 0.12s;
-      background: var(--f-surface);
-      color: var(--f-text-3);
+      transition: all var(--trans);
+      background: var(--surface-tint);
+      color: var(--text-3);
       user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
-    .ea-toggle:hover { border-color: var(--f-blue); color: var(--f-blue); background: var(--f-blue-lighter); }
-    .ea-toggle.on {
-      background: var(--f-blue);
-      border-color: var(--f-blue);
-      color: #fff;
-      box-shadow: var(--f-shadow-2);
-    }
-    .ea-toggle.on:hover { background: var(--f-blue-hover); }
-    .ea-full { font-size: 9.5px; color: var(--f-text-3); text-align: center; max-width: 66px; line-height: 1.3; }
+    .ea-toggle:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-ltr); }
+    .ea-toggle.on    { background: var(--blue); border-color: var(--blue); color: #fff; box-shadow: var(--sh-1); }
+    .ea-toggle.on:hover { background: var(--blue-h); }
+    .ea-full { font-size: 9px; color: var(--text-3); text-align: center; max-width: 60px; line-height: 1.35; }
 
-    /* ── Scrollbar ───────────────────────────────────────────────── */
-    ::-webkit-scrollbar { width: 6px; }
+    /* ═══════════════════ SCROLLBAR ════════════════════════════ */
+    ::-webkit-scrollbar       { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--f-border-strong); border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: var(--f-text-3); }
+    ::-webkit-scrollbar-thumb { background: var(--border-str); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
 
-    /* ── Settings Modal ──────────────────────────────────────────── */
+    /* ═══════════════════ MODAL ═════════════════════════════════ */
     .modal-overlay {
       position: fixed; inset: 0;
-      background: rgba(0,0,0,0.36);
+      background: rgba(0,0,0,.38);
       display: flex; align-items: center; justify-content: center;
       z-index: 1000;
-      backdrop-filter: blur(3px);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      padding: 16px;
     }
     .modal {
-      background: var(--f-surface);
-      border-radius: var(--r-lg);
-      width: 560px; max-width: 96vw; max-height: 84vh;
+      background: var(--surface);
+      border-radius: var(--r-xl);
+      width: 560px; max-width: 100%; max-height: 88vh;
       display: flex; flex-direction: column;
-      box-shadow: var(--f-shadow-64);
-      border: 1px solid var(--f-border);
+      box-shadow: var(--sh-modal);
+      border: 1px solid var(--border);
+      animation: modal-in .2s cubic-bezier(0.34, 1.3, 0.64, 1);
+    }
+    @keyframes modal-in {
+      from { opacity: 0; transform: scale(0.94) translateY(8px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
     }
     .modal-hdr {
-      padding: 18px 20px 14px;
-      border-bottom: 1px solid var(--f-border);
+      padding: 20px 22px 16px;
+      border-bottom: 1px solid var(--border);
       display: flex; align-items: center; justify-content: space-between;
       flex-shrink: 0;
     }
-    .modal-title { font-size: 16px; font-weight: 600; color: var(--f-text); letter-spacing: -0.01em; }
+    .modal-title { font-size: 16px; font-weight: 600; color: var(--text); letter-spacing: -0.015em; }
     .modal-close {
-      width: 28px; height: 28px;
+      width: 30px; height: 30px;
       border: none; border-radius: var(--r-sm);
       background: transparent;
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      color: var(--f-text-2);
-      transition: background 0.1s;
+      color: var(--text-2);
+      transition: background var(--trans);
     }
-    .modal-close:hover { background: var(--f-hover); color: var(--f-text); }
-    .modal-body { flex: 1; overflow-y: auto; padding: 16px 20px; }
+    .modal-close:hover { background: var(--hover); color: var(--text); }
+    .modal-body { flex: 1; overflow-y: auto; padding: 18px 22px; }
     .modal-hint {
-      font-size: 12px;
-      color: var(--f-text-2);
-      background: var(--f-blue-lighter);
-      border-left: 3px solid var(--f-blue);
+      font-size: 12.5px; color: var(--text-2);
+      background: var(--blue-ltr);
+      border-left: 3px solid var(--blue);
       border-radius: 0 var(--r-sm) var(--r-sm) 0;
-      padding: 9px 12px;
-      margin-bottom: 16px;
-      line-height: 1.55;
+      padding: 10px 14px;
+      margin-bottom: 18px;
+      line-height: 1.6;
     }
 
-    .preset-section { margin-bottom: 20px; }
+    .preset-section { margin-bottom: 22px; }
     .preset-section:last-child { margin-bottom: 0; }
     .preset-sec-title {
-      font-size: 10.5px; font-weight: 700;
-      color: var(--f-text-2);
-      text-transform: uppercase; letter-spacing: 0.07em;
-      margin-bottom: 8px; padding-bottom: 6px;
-      border-bottom: 1px solid var(--f-border);
-      display: flex; align-items: center; gap: 6px;
+      font-size: 10px; font-weight: 700;
+      color: var(--text-3);
+      text-transform: uppercase; letter-spacing: 0.09em;
+      margin-bottom: 10px; padding-bottom: 7px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 7px;
     }
     .preset-tags {
-      display: flex; flex-wrap: wrap; gap: 5px;
-      margin-bottom: 8px; min-height: 28px; align-items: center;
+      display: flex; flex-wrap: wrap; gap: 6px;
+      margin-bottom: 10px; min-height: 28px; align-items: center;
     }
     .preset-tag {
-      display: inline-flex; align-items: center; gap: 4px;
-      background: var(--f-hover);
-      border: 1px solid var(--f-border-strong);
-      border-radius: var(--r-sm);
-      padding: 3px 8px 3px 10px;
-      font-size: 12px;
-      color: var(--f-text);
+      display: inline-flex; align-items: center; gap: 5px;
+      background: var(--surface-tint);
+      border: 1px solid var(--border-str);
+      border-radius: var(--r-pill);
+      padding: 4px 10px 4px 12px;
+      font-size: 12px; color: var(--text);
     }
     .preset-tag-del {
       width: 14px; height: 14px; border: none;
-      background: transparent;
-      cursor: pointer; font-size: 10px; font-weight: 700;
+      background: transparent; cursor: pointer;
+      font-size: 11px; font-weight: 700;
       display: flex; align-items: center; justify-content: center;
-      color: var(--f-text-3); border-radius: var(--r-xs);
-      line-height: 1;
-      transition: background 0.1s, color 0.1s;
+      color: var(--text-3); border-radius: var(--r-pill);
+      transition: background var(--trans), color var(--trans);
     }
     .preset-tag-del:hover { background: #fde7e9; color: #a4262c; }
-    .preset-empty { font-size: 12px; color: var(--f-text-3); font-style: italic; }
-    .preset-add-row { display: flex; gap: 6px; }
+    .preset-empty { font-size: 12px; color: var(--text-3); font-style: italic; }
+    .preset-add-row { display: flex; gap: 7px; }
     .preset-add-input {
       flex: 1;
-      border: 1px solid var(--f-border-strong);
+      border: 1.5px solid var(--border-str);
       border-radius: var(--r-sm);
-      padding: 5px 10px;
-      font-size: 13px;
-      color: var(--f-text);
+      padding: 6px 10px;
+      font-size: 13px; color: var(--text);
       font-family: inherit;
-      transition: border-color 0.12s, box-shadow 0.12s;
+      transition: border-color var(--trans), box-shadow var(--trans);
     }
     .preset-add-input:focus {
       outline: none;
-      border-color: var(--f-blue);
-      box-shadow: 0 0 0 1px var(--f-blue);
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px var(--blue-ltr);
     }
+
+    /* ═══════════════════ RESPONSIVE ════════════════════════════ */
+
+    /* ── Tablet (768 – 1023px) ─────────────────────────────── */
+    @media (max-width: 1023px) {
+      :root { --sidebar-w: 260px; }
+      .tb-label { display: none; }
+      #pname-input { width: 160px; }
+      .tb-saved { display: none; }
+    }
+
+    /* ── Mobile (< 768px) ─────────────────────────────────── */
+    @media (max-width: 767px) {
+      :root { --toolbar-h: 54px; }
+
+      .tb-hamburger { display: flex; }
+      .tb-title { display: none; }
+      .tb-logo  { margin-right: 0; }
+      #pname-input { width: 120px; font-size: 12px; }
+      .tb-saved { display: none; }
+      .tb-divider { display: none; }
+
+      /* Hide some toolbar buttons on mobile, show icon-only */
+      .btn-ghost .tb-label  { display: none; }
+      .btn-subtle .tb-label { display: none; }
+
+      #legend { display: none; }
+
+      /* Sidebar becomes a full-height drawer */
+      .sidebar-scrim { display: block; }
+
+      #tree-panel {
+        position: fixed;
+        top: 0; left: 0; bottom: 0;
+        width: 88vw;
+        max-width: 320px;
+        z-index: 150;
+        margin-top: 0;
+        transform: translateX(-105%);
+        box-shadow: none;
+        border-right: 1px solid var(--border);
+      }
+      #tree-panel.open {
+        transform: translateX(0);
+        box-shadow: var(--sh-modal);
+      }
+
+      /* Back button visible on mobile when something is selected */
+      .det-back-btn { display: flex; }
+
+      /* Detail header padding */
+      .det-hdr { padding: 12px 16px 10px; }
+      .det-body { padding: 12px 14px 20px; }
+
+      /* EA grid 2 columns on small screens */
+      .ea-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+      .ea-toggle { width: 100%; min-width: 36px; }
+    }
+
+    @media (max-width: 480px) {
+      .ea-grid { grid-template-columns: repeat(2, 1fr); }
+      .det-title { font-size: 14px; }
+    }
+
+    /* ═══════════════════ UTILITIES ════════════════════════════ */
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
   </style>
 </head>
 <body>
 <div id="app">
 
-  <!-- ═══════════════════════ TOOLBAR ════════════════════════════ -->
+  <!-- ─────────────── TOOLBAR ──────────────────────────────── -->
   <div id="toolbar">
-    <span class="toolbar-logo">
-      <!-- App icon: lightning bolt -->
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Hamburger (mobile only) -->
+    <button class="tb-hamburger" @click="sidebarOpen = !sidebarOpen" aria-label="Navigation öffnen">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+        <line x1="2" y1="5"  x2="16" y2="5"/>
+        <line x1="2" y1="9"  x2="16" y2="9"/>
+        <line x1="2" y1="13" x2="16" y2="13"/>
+      </svg>
+    </button>
+
+    <span class="tb-logo">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
         <path d="M9 2L4 9h4l-1 5 5-7H8l1-5z"/>
       </svg>
     </span>
-    <span class="toolbar-title">Übergabeprotokoll</span>
-    <input id="pname-input" v-model="projektname" placeholder="Projektname eingeben…" />
-    <span class="toolbar-sep"></span>
-    <span class="toolbar-saved">{{ savedMsg }}</span>
 
-    <button class="btn btn-ghost" @click="triggerImport" title="JSON-Datei laden">
+    <span class="tb-title">Übergabeprotokoll</span>
+
+    <input id="pname-input" v-model="projektname" placeholder="Projektname…" aria-label="Projektname" />
+
+    <span class="tb-sep"></span>
+    <span class="tb-saved">{{ savedMsg }}</span>
+
+    <button class="btn btn-ghost" @click="triggerImport" title="JSON laden">
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M2 4h4l2 2h6v8H2V4z"/><path d="M2 8h12"/>
       </svg>
-      Laden
+      <span class="tb-label">Laden</span>
     </button>
+
     <button class="btn btn-ghost" @click="exportJSON" title="Als JSON speichern">
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="2" y="2" width="12" height="13" rx="1"/><path d="M5 2v4h6V2"/><path d="M11 3h-1"/><path d="M4 9h8M4 12h5"/>
+        <rect x="2" y="2" width="12" height="13" rx="1.5"/><path d="M5 2v4h6V2"/><path d="M11 3h-1"/><path d="M4 9h8M4 12h5"/>
       </svg>
-      Speichern
+      <span class="tb-label">Speichern</span>
     </button>
+
     <button class="btn btn-green" @click="exportExcel" title="Als Excel exportieren">
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="2" y="2" width="12" height="12" rx="1"/><path d="M2 6h12M2 10h12M6 2v12M10 2v12"/>
+        <rect x="2" y="2" width="12" height="12" rx="1.5"/><path d="M2 6h12M2 10h12M6 2v12M10 2v12"/>
       </svg>
-      Excel
+      <span class="tb-label">Excel</span>
     </button>
+
     <button class="btn btn-red" @click="exportPDF" title="Als PDF exportieren">
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M4 2h6l4 4v9H4V2z"/><path d="M10 2v4h4"/><path d="M6 9h4M6 12h3"/>
       </svg>
-      PDF
+      <span class="tb-label">PDF</span>
     </button>
+
     <div class="tb-divider"></div>
-    <button class="btn btn-amber" @click="showSettings=true" title="Vorbelegungen konfigurieren">
+
+    <button class="btn btn-subtle" @click="showSettings=true" title="Vorlagen konfigurieren">
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.1 3.1l1.4 1.4M11.5 11.5l1.4 1.4M3.1 12.9l1.4-1.4M11.5 4.5l1.4-1.4"/>
       </svg>
-      Vorlagen
+      <span class="tb-label">Vorlagen</span>
     </button>
+
     <input type="file" ref="fileInput" accept=".json" style="display:none" @change="onFileLoad" />
   </div>
 
-  <!-- ═══════════════════════ LEGEND ═════════════════════════════ -->
+  <!-- ─────────────── LEGEND ───────────────────────────────── -->
   <div id="legend">
     <div class="leg-item"><div class="leg-dot" style="background:var(--lv0)"></div>Station</div>
     <div class="leg-item"><div class="leg-dot" style="background:var(--lv1)"></div>Bauraum</div>
@@ -727,36 +856,35 @@
     <div class="leg-item"><div class="leg-dot" style="background:var(--lv3)"></div>Funktion</div>
     <div class="leg-item"><div class="leg-dot" style="background:var(--lv4)"></div>Zustand</div>
     <div class="leg-sep"></div>
-    <span class="leg-hint">Doppelklick = umbenennen &nbsp;|&nbsp; + = Kind hinzufügen &nbsp;|&nbsp; × = löschen</span>
+    <span class="leg-hint">Doppelklick = umbenennen &nbsp;·&nbsp; + = untergeordnet anlegen &nbsp;·&nbsp; × = löschen</span>
   </div>
 
-  <!-- ═══════════════════════ MAIN ═══════════════════════════════ -->
+  <!-- ─────────────── MAIN ──────────────────────────────────── -->
   <div id="main">
 
-    <!-- ─── Tree Panel ─────────────────────────────────────────── -->
-    <div id="tree-panel">
+    <!-- Scrim (mobile overlay behind sidebar) -->
+    <div class="sidebar-scrim" :class="{visible: sidebarOpen}" @click="sidebarOpen=false"></div>
+
+    <!-- ──────── TREE PANEL ──────────────────────────────── -->
+    <div id="tree-panel" :class="{open: sidebarOpen}">
       <div class="tree-hdr">
-        <span>Struktur</span>
-        <button class="btn btn-blue btn-sm" @click="addStation">+ Station</button>
+        <span>Projektstruktur</span>
+        <button class="btn btn-primary btn-sm" @click="addStation">+ Station</button>
       </div>
       <div class="tree-body">
         <div class="tree-empty" v-if="stationen.length === 0">
-          Noch keine Stationen.<br/>
-          Klicke <strong>+ Station</strong> um zu beginnen.
+          Noch keine Stationen.<br/>Klicke <strong>+ Station</strong><br/>um zu beginnen.
         </div>
 
-        <!-- Stationen -->
         <template v-for="(s, si) in stationen" :key="s.id">
           <div class="tn tn-l0" :class="{sel: isSel(si)}"
                @click="sel(si)" @dblclick.prevent="startEdit(s)">
             <span class="tn-arr" @click.stop="togExp(s.id)">
               <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor">
-                <path v-if="isExp(s.id)" d="M0 2l4 4 4-4z"/>
-                <path v-else d="M2 0l4 4-4 4z"/>
+                <path v-if="isExp(s.id)" d="M0 2l4 4 4-4z"/><path v-else d="M2 0l4 4-4 4z"/>
               </svg>
             </span>
             <span class="tn-ico">
-              <!-- Station: factory/building -->
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M1 14V7l4-3v3l4-3v3l4-3v10H1z"/><path d="M6 14v-4h4v4"/>
               </svg>
@@ -767,23 +895,20 @@
             <span v-else class="tn-lbl">{{ s.name }}</span>
             <div class="tn-acts">
               <button class="tn-btn tn-btn-add" @click.stop="addBauraum(si)" title="Bauraum hinzufügen">+</button>
-              <button class="tn-btn tn-btn-del" @click.stop="delStation(si)" title="Station löschen">×</button>
+              <button class="tn-btn tn-btn-del" @click.stop="delStation(si)" title="Löschen">×</button>
             </div>
           </div>
 
-          <!-- Bauräume -->
           <template v-if="isExp(s.id)">
             <template v-for="(b, bi) in s.bauräume" :key="b.id">
               <div class="tn tn-l1" :class="{sel: isSel(si,bi)}"
                    @click="sel(si,bi)" @dblclick.prevent="startEdit(b)">
                 <span class="tn-arr" @click.stop="togExp(b.id)">
                   <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor">
-                    <path v-if="isExp(b.id)" d="M0 2l4 4 4-4z"/>
-                    <path v-else d="M2 0l4 4-4 4z"/>
+                    <path v-if="isExp(b.id)" d="M0 2l4 4 4-4z"/><path v-else d="M2 0l4 4-4 4z"/>
                   </svg>
                 </span>
                 <span class="tn-ico">
-                  <!-- Bauraum: cube/box -->
                   <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M8 2l5.5 3v6L8 14 2.5 11V5L8 2z"/><path d="M8 2v12M2.5 5l5.5 3 5.5-3"/>
                   </svg>
@@ -794,23 +919,20 @@
                 <span v-else class="tn-lbl">{{ b.name }}</span>
                 <div class="tn-acts">
                   <button class="tn-btn tn-btn-add" @click.stop="addFunkDef(si,bi)" title="Funktionsdefinition hinzufügen">+</button>
-                  <button class="tn-btn tn-btn-del" @click.stop="delBauraum(si,bi)" title="Bauraum löschen">×</button>
+                  <button class="tn-btn tn-btn-del" @click.stop="delBauraum(si,bi)" title="Löschen">×</button>
                 </div>
               </div>
 
-              <!-- Funktionsdefinitionen -->
               <template v-if="isExp(b.id)">
                 <template v-for="(fd, fdi) in b.funktionsdefinitionen" :key="fd.id">
                   <div class="tn tn-l2" :class="{sel: isSel(si,bi,fdi)}"
                        @click="sel(si,bi,fdi)" @dblclick.prevent="startEdit(fd)">
                     <span class="tn-arr" @click.stop="togExp(fd.id)">
                       <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor">
-                        <path v-if="isExp(fd.id)" d="M0 2l4 4 4-4z"/>
-                        <path v-else d="M2 0l4 4-4 4z"/>
+                        <path v-if="isExp(fd.id)" d="M0 2l4 4 4-4z"/><path v-else d="M2 0l4 4-4 4z"/>
                       </svg>
                     </span>
                     <span class="tn-ico">
-                      <!-- FunkDef: gear -->
                       <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.1 3.1l1.4 1.4M11.5 11.5l1.4 1.4M3.1 12.9l1.4-1.4M11.5 4.5l1.4-1.4"/>
                       </svg>
@@ -825,19 +947,16 @@
                     </div>
                   </div>
 
-                  <!-- Funktionen -->
                   <template v-if="isExp(fd.id)">
                     <template v-for="(f, fi) in fd.funktionen" :key="f.id">
                       <div class="tn tn-l3" :class="{sel: isSel(si,bi,fdi,fi)}"
                            @click="sel(si,bi,fdi,fi)" @dblclick.prevent="startEdit(f)">
                         <span class="tn-arr" @click.stop="togExp(f.id)">
                           <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor">
-                            <path v-if="isExp(f.id)" d="M0 2l4 4 4-4z"/>
-                            <path v-else d="M2 0l4 4-4 4z"/>
+                            <path v-if="isExp(f.id)" d="M0 2l4 4 4-4z"/><path v-else d="M2 0l4 4-4 4z"/>
                           </svg>
                         </span>
                         <span class="tn-ico">
-                          <!-- Funktion: wrench -->
                           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M13 3a3 3 0 00-3.8 3.8L3 13a1.5 1.5 0 002.1 2.1l6.2-6.2A3 3 0 0013 3z"/><path d="M13 3l-2 2-1.5-1.5 2-2"/>
                           </svg>
@@ -853,14 +972,12 @@
                         </div>
                       </div>
 
-                      <!-- Zustände -->
                       <template v-if="isExp(f.id)">
                         <div v-for="(z, zi) in f.zustände" :key="z.id"
                              class="tn tn-l4" :class="{sel: isSel(si,bi,fdi,fi,zi)}"
                              @click="sel(si,bi,fdi,fi,zi)" @dblclick.prevent="startEdit(z)">
-                          <span class="tn-arr ph">▶</span>
+                          <span class="tn-arr ph"></span>
                           <span class="tn-ico">
-                            <!-- Zustand: state circle -->
                             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
                               <circle cx="8" cy="8" r="5.5"/><circle cx="8" cy="8" r="2" fill="currentColor" stroke="none"/>
                             </svg>
@@ -871,41 +988,45 @@
                                  @click.stop @dblclick.stop />
                           <span v-else class="tn-lbl">{{ z.name }}</span>
                           <div class="tn-acts">
-                            <button class="tn-btn tn-btn-del" @click.stop="delZustand(si,bi,fdi,fi,zi)" title="Zustand löschen">×</button>
+                            <button class="tn-btn tn-btn-del" @click.stop="delZustand(si,bi,fdi,fi,zi)" title="Löschen">×</button>
                           </div>
                         </div>
                       </template>
 
                     </template>
                   </template>
-
                 </template>
               </template>
-
             </template>
           </template>
-
         </template>
+
       </div><!-- tree-body -->
     </div><!-- tree-panel -->
 
-    <!-- ─── Detail Panel ──────────────────────────────────────── -->
+    <!-- ──────── DETAIL PANEL ────────────────────────────── -->
     <div id="detail-panel">
 
       <!-- Nothing selected -->
       <div class="det-empty" v-if="!path">
         <div class="det-empty-ico">
-          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 6h4l2 2h10v12H3V6z"/><path d="M3 10h18"/>
+          <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h4l2 2h10v12H3V6z"/><path d="M3 10h18"/><path d="M9 14h6M9 17h4"/>
           </svg>
         </div>
         <div class="det-empty-ttl">Kein Element ausgewählt</div>
-        <div class="det-empty-txt">Wähle einen Knoten im Baum aus oder lege eine neue Station an.</div>
+        <div class="det-empty-txt">Wähle einen Knoten im Baum links aus oder lege eine neue Station an.</div>
       </div>
 
-      <!-- Station selected -->
+      <!-- ── Station ── -->
       <template v-else-if="path.length === 1">
         <div class="det-hdr">
+          <button class="det-back-btn" @click="sidebarOpen=true">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10 3L5 8l5 5"/>
+            </svg>
+            Zurück
+          </button>
           <div class="det-title-row">
             <span class="det-badge b-station">Station</span>
             <span class="det-title">{{ curStation.name }}</span>
@@ -935,12 +1056,14 @@
         </div>
       </template>
 
-      <!-- Bauraum selected -->
+      <!-- ── Bauraum ── -->
       <template v-else-if="path.length === 2">
         <div class="det-hdr">
-          <div class="det-bc">
-            <span class="det-bc-item">{{ curStation.name }}</span>
-          </div>
+          <button class="det-back-btn" @click="sidebarOpen=true">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3L5 8l5 5"/></svg>
+            Zurück
+          </button>
+          <div class="det-bc"><span class="det-bc-item">{{ curStation.name }}</span></div>
           <div class="det-title-row">
             <span class="det-badge b-bauraum">Bauraum</span>
             <span class="det-title">{{ curBauraum.name }}</span>
@@ -970,9 +1093,13 @@
         </div>
       </template>
 
-      <!-- Funktionsdefinition selected -->
+      <!-- ── Funktionsdefinition ── -->
       <template v-else-if="path.length === 3">
         <div class="det-hdr">
+          <button class="det-back-btn" @click="sidebarOpen=true">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3L5 8l5 5"/></svg>
+            Zurück
+          </button>
           <div class="det-bc">
             <span class="det-bc-item">{{ curStation.name }}</span>
             <span class="det-bc-sep">›</span>
@@ -1007,9 +1134,13 @@
         </div>
       </template>
 
-      <!-- Funktion selected -->
+      <!-- ── Funktion ── -->
       <template v-else-if="path.length === 4">
         <div class="det-hdr">
+          <button class="det-back-btn" @click="sidebarOpen=true">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3L5 8l5 5"/></svg>
+            Zurück
+          </button>
           <div class="det-bc">
             <span class="det-bc-item">{{ curStation.name }}</span>
             <span class="det-bc-sep">›</span>
@@ -1027,8 +1158,7 @@
             <div class="card-title">Allgemein</div>
             <div class="fg">
               <label class="flbl">Bezeichnung</label>
-              <input class="finput" v-model="curFunktion.name" list="dl-funktionen"
-                     placeholder="z.B. Z-Ausgleich, XYZ-Handling…" />
+              <input class="finput" v-model="curFunktion.name" list="dl-funktionen" placeholder="z.B. Z-Ausgleich, XYZ-Handling…" />
             </div>
           </div>
           <div class="card">
@@ -1038,8 +1168,8 @@
                 <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
                   <circle cx="8" cy="8" r="5.5"/><circle cx="8" cy="8" r="2" fill="currentColor" stroke="none"/>
                 </svg>
-                <span style="font-weight:600;color:#8764b8">{{ z.name }}</span>
-                <span style="color:#a09e9c;font-size:11px" v-if="z.stellglied">— {{ z.stellglied }}</span>
+                <span style="font-weight:600;color:var(--lv2)">{{ z.name }}</span>
+                <span style="color:var(--text-3);font-size:11px" v-if="z.stellglied">— {{ z.stellglied }}</span>
               </li>
             </ul>
             <div class="child-empty" v-else>Noch keine Zustände vorhanden.</div>
@@ -1048,9 +1178,13 @@
         </div>
       </template>
 
-      <!-- Zustand selected -->
+      <!-- ── Zustand ── -->
       <template v-else-if="path.length === 5">
         <div class="det-hdr">
+          <button class="det-back-btn" @click="sidebarOpen=true">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3L5 8l5 5"/></svg>
+            Zurück
+          </button>
           <div class="det-bc">
             <span class="det-bc-item">{{ curStation.name }}</span>
             <span class="det-bc-sep">›</span>
@@ -1066,16 +1200,14 @@
           </div>
         </div>
         <div class="det-body">
-
           <div class="card">
             <div class="card-title">Zustand</div>
             <div class="fg">
               <label class="flbl">Zustandsname</label>
               <input class="finput" v-model="curZustand.name" list="dl-zustände"
-                     placeholder="z.B. AS (Arbeitsstellung), GS (Grundstellung), EG (Eingefahren), FS (Ausgefahren)…" />
+                     placeholder="z.B. AS, GS, EG, FS, Arbeitsstellung, Grundstellung…" />
             </div>
           </div>
-
           <div class="card">
             <div class="card-title">Stellglied</div>
             <div class="fg">
@@ -1084,17 +1216,15 @@
                      placeholder="z.B. 5/2-Wegeventil Federrückgestellt, Magnetventil bistabil…" />
             </div>
           </div>
-
           <div class="card">
             <div class="card-title">Bemerkungen</div>
             <div class="fg">
               <textarea class="ftextarea" v-model="curZustand.bemerkungen"
-                        placeholder="z.B. Sicherheitsrelevant, Steuerluft nötig, Öffner, Schließer, Hinweis zur Verdrahtung…"></textarea>
+                        placeholder="z.B. Sicherheitsrelevant, Steuerluft nötig, Öffner, Schließer…"></textarea>
             </div>
           </div>
-
           <div class="card">
-            <div class="card-title">E/A-Zuordnung — klicken zum Umschalten (0 / 1)</div>
+            <div class="card-title">E/A-Zuordnung — tippen zum Umschalten (0 / 1)</div>
             <div class="ea-grid">
               <div class="ea-item" v-for="ea in EA_FIELDS" :key="ea.key">
                 <div class="ea-key">{{ ea.key }}</div>
@@ -1106,14 +1236,13 @@
               </div>
             </div>
           </div>
-
         </div>
       </template>
 
     </div><!-- detail-panel -->
   </div><!-- main -->
 
-  <!-- ═══════════════════ DATALISTS (Vorbelegungen) ══════════════ -->
+  <!-- Datalists -->
   <datalist id="dl-funktionen">
     <option v-for="v in einstellungen.funktionsNamen" :value="v" :key="v" />
   </datalist>
@@ -1124,88 +1253,82 @@
     <option v-for="v in einstellungen.stellglieder" :value="v" :key="v" />
   </datalist>
 
-  <!-- ═══════════════════ EINSTELLUNGEN MODAL ════════════════════ -->
+  <!-- ─────────────── SETTINGS MODAL ───────────────────────── -->
   <div class="modal-overlay" v-if="showSettings" @click.self="showSettings=false">
     <div class="modal">
       <div class="modal-hdr">
         <span class="modal-title">Vorbelegungen konfigurieren</span>
-        <button class="modal-close" @click="showSettings=false" title="Schließen">
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+        <button class="modal-close" @click="showSettings=false" aria-label="Schließen">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
             <path d="M1 1l10 10M11 1L1 11"/>
           </svg>
         </button>
       </div>
       <div class="modal-body">
         <div class="modal-hint">
-          Die Einträge hier erscheinen als Vorschläge beim Tippen. Du kannst aber immer auch beliebigen Freitext eingeben. Vorbelegungen werden mit dem Projekt gespeichert.
+          Die Einträge erscheinen als Vorschläge beim Tippen. Freitext ist jederzeit möglich. Vorbelegungen werden mit dem Projekt gespeichert.
         </div>
 
-        <!-- Funktionsnamen -->
         <div class="preset-section">
           <div class="preset-sec-title">
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M13 3a3 3 0 00-3.8 3.8L3 13a1.5 1.5 0 002.1 2.1l6.2-6.2A3 3 0 0013 3z"/><path d="M13 3l-2 2-1.5-1.5 2-2"/>
             </svg>
             Funktionsnamen
           </div>
           <div class="preset-tags">
             <div class="preset-tag" v-for="(v, i) in einstellungen.funktionsNamen" :key="i">
-              {{ v }}
-              <button class="preset-tag-del" @click="delPreset('funktionsNamen', i)" title="Entfernen">×</button>
+              {{ v }}<button class="preset-tag-del" @click="delPreset('funktionsNamen', i)">×</button>
             </div>
             <span class="preset-empty" v-if="!einstellungen.funktionsNamen.length">Noch keine Einträge</span>
           </div>
           <div class="preset-add-row">
             <input class="preset-add-input" v-model="newPreset.funktionsNamen"
-                   placeholder="z.B. Z-Ausgleich, XYZ-Handling, Greifer…"
+                   placeholder="z.B. Z-Ausgleich, Greifer…"
                    @keyup.enter="addPreset('funktionsNamen')" />
-            <button class="btn btn-blue btn-sm" @click="addPreset('funktionsNamen')">+ Hinzufügen</button>
+            <button class="btn btn-primary btn-sm" @click="addPreset('funktionsNamen')">+ Hinzufügen</button>
           </div>
         </div>
 
-        <!-- Zustandsnamen -->
         <div class="preset-section">
           <div class="preset-sec-title">
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
               <circle cx="8" cy="8" r="5.5"/><circle cx="8" cy="8" r="2" fill="currentColor" stroke="none"/>
             </svg>
             Zustandsnamen
           </div>
           <div class="preset-tags">
             <div class="preset-tag" v-for="(v, i) in einstellungen.zustandsNamen" :key="i">
-              {{ v }}
-              <button class="preset-tag-del" @click="delPreset('zustandsNamen', i)" title="Entfernen">×</button>
+              {{ v }}<button class="preset-tag-del" @click="delPreset('zustandsNamen', i)">×</button>
             </div>
             <span class="preset-empty" v-if="!einstellungen.zustandsNamen.length">Noch keine Einträge</span>
           </div>
           <div class="preset-add-row">
             <input class="preset-add-input" v-model="newPreset.zustandsNamen"
-                   placeholder="z.B. AS, GS, EG, FS, Arbeitsstellung…"
+                   placeholder="z.B. AS, GS, Arbeitsstellung…"
                    @keyup.enter="addPreset('zustandsNamen')" />
-            <button class="btn btn-blue btn-sm" @click="addPreset('zustandsNamen')">+ Hinzufügen</button>
+            <button class="btn btn-primary btn-sm" @click="addPreset('zustandsNamen')">+ Hinzufügen</button>
           </div>
         </div>
 
-        <!-- Stellglieder -->
         <div class="preset-section">
           <div class="preset-sec-title">
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.1 3.1l1.4 1.4M11.5 11.5l1.4 1.4M3.1 12.9l1.4-1.4M11.5 4.5l1.4-1.4"/>
             </svg>
             Stellglieder
           </div>
           <div class="preset-tags">
             <div class="preset-tag" v-for="(v, i) in einstellungen.stellglieder" :key="i">
-              {{ v }}
-              <button class="preset-tag-del" @click="delPreset('stellglieder', i)" title="Entfernen">×</button>
+              {{ v }}<button class="preset-tag-del" @click="delPreset('stellglieder', i)">×</button>
             </div>
             <span class="preset-empty" v-if="!einstellungen.stellglieder.length">Noch keine Einträge</span>
           </div>
           <div class="preset-add-row">
             <input class="preset-add-input" v-model="newPreset.stellglieder"
-                   placeholder="z.B. 5/2-Wegeventil Federrückgestellt, Magnetventil…"
+                   placeholder="z.B. 5/2-Wegeventil, Magnetventil…"
                    @keyup.enter="addPreset('stellglieder')" />
-            <button class="btn btn-blue btn-sm" @click="addPreset('stellglieder')">+ Hinzufügen</button>
+            <button class="btn btn-primary btn-sm" @click="addPreset('stellglieder')">+ Hinzufügen</button>
           </div>
         </div>
 
@@ -1218,22 +1341,13 @@
 <script>
 const { createApp } = Vue;
 
-// ── Helpers ────────────────────────────────────────────────────────────────
 function uid() {
   return '_' + Math.random().toString(36).slice(2, 11) + Date.now().toString(36);
 }
-function mkStation(name = 'Neue Station') {
-  return { id: uid(), name, bauräume: [] };
-}
-function mkBauraum(name = 'Neuer Bauraum') {
-  return { id: uid(), name, funktionsdefinitionen: [] };
-}
-function mkFunkDef(name = 'Neue Funktionsdefinition') {
-  return { id: uid(), name, funktionen: [] };
-}
-function mkFunktion(name = 'Neue Funktion') {
-  return { id: uid(), name, zustände: [] };
-}
+function mkStation(name = 'Neue Station')           { return { id: uid(), name, bauräume: [] }; }
+function mkBauraum(name = 'Neuer Bauraum')          { return { id: uid(), name, funktionsdefinitionen: [] }; }
+function mkFunkDef(name = 'Neue Funktionsdefinition') { return { id: uid(), name, funktionen: [] }; }
+function mkFunktion(name = 'Neue Funktion')         { return { id: uid(), name, zustände: [] }; }
 function mkZustand(name = 'Neuer Zustand') {
   return { id: uid(), name, stellglied: '', bemerkungen: '',
            DI: 0, DO: 0, SDI: 0, SDO: 0, AI: 0, AO: 0, Sonstige: 0, Feldbus: 0 };
@@ -1252,32 +1366,27 @@ const EA_FIELDS = [
 
 const STORAGE_KEY = 'uebergabe_v1';
 
-// ── App ────────────────────────────────────────────────────────────────────
 createApp({
   data() {
     return {
       projektname: 'Übergabeprotokoll',
       stationen: [],
-      path: null,          // null | [si] | [si,bi] | [si,bi,fdi] | [si,bi,fdi,fi] | [si,bi,fdi,fi,zi]
-      expanded: {},        // { [id]: true }
+      path: null,
+      expanded: {},
       editId: null,
       editVal: '',
       savedMsg: '',
       showSettings: false,
+      sidebarOpen: false,
       newPreset: { funktionsNamen: '', zustandsNamen: '', stellglieder: '' },
       einstellungen: {
-        funktionsNamen: ['Z-Ausgleich', 'XYZ-Handling', 'Hub', 'Drehen', 'Schieber', 'Greifer', 'Verriegelung', 'Entriegelung'],
-        zustandsNamen:  ['AS', 'GS', 'EG', 'FS', 'Arbeitsstellung', 'Grundstellung', 'Eingefahren', 'Ausgefahren'],
-        stellglieder:   [
-          '5/2-Wegeventil Federrückgestellt',
-          '5/2-Wegeventil bistabil',
-          '3/2-Wegeventil Federrückgestellt',
-          '3/2-Wegeventil bistabil',
-          'Pneumatikzylinder einfachwirkend',
-          'Pneumatikzylinder doppeltwirkend',
-          'Magnetventil',
-          'Elektromotor',
-          'Servomotor',
+        funktionsNamen: ['Z-Ausgleich','XYZ-Handling','Hub','Drehen','Schieber','Greifer','Verriegelung','Entriegelung'],
+        zustandsNamen:  ['AS','GS','EG','FS','Arbeitsstellung','Grundstellung','Eingefahren','Ausgefahren'],
+        stellglieder: [
+          '5/2-Wegeventil Federrückgestellt','5/2-Wegeventil bistabil',
+          '3/2-Wegeventil Federrückgestellt','3/2-Wegeventil bistabil',
+          'Pneumatikzylinder einfachwirkend','Pneumatikzylinder doppeltwirkend',
+          'Magnetventil','Elektromotor','Servomotor',
         ],
       },
       EA_FIELDS,
@@ -1285,27 +1394,28 @@ createApp({
   },
 
   computed: {
-    curStation()  { return this.path && this.path.length >= 1 ? this.stationen[this.path[0]] : null; },
-    curBauraum()  { return this.path && this.path.length >= 2 ? this.curStation.bauräume[this.path[1]] : null; },
-    curFunkDef()  { return this.path && this.path.length >= 3 ? this.curBauraum.funktionsdefinitionen[this.path[2]] : null; },
-    curFunktion() { return this.path && this.path.length >= 4 ? this.curFunkDef.funktionen[this.path[3]] : null; },
-    curZustand()  { return this.path && this.path.length >= 5 ? this.curFunktion.zustände[this.path[4]] : null; },
+    curStation()  { return this.path?.length >= 1 ? this.stationen[this.path[0]] : null; },
+    curBauraum()  { return this.path?.length >= 2 ? this.curStation.bauräume[this.path[1]] : null; },
+    curFunkDef()  { return this.path?.length >= 3 ? this.curBauraum.funktionsdefinitionen[this.path[2]] : null; },
+    curFunktion() { return this.path?.length >= 4 ? this.curFunkDef.funktionen[this.path[3]] : null; },
+    curZustand()  { return this.path?.length >= 5 ? this.curFunktion.zustände[this.path[4]] : null; },
   },
 
   methods: {
-    // ── Selection ──────────────────────────────────────────────────
-    sel(...idx) { this.path = [...idx]; },
+    sel(...idx) {
+      this.path = [...idx];
+      // On mobile: close sidebar after selection to show detail
+      if (window.innerWidth < 768) this.sidebarOpen = false;
+    },
     isSel(...idx) {
       if (!this.path || this.path.length !== idx.length) return false;
       return idx.every((v, i) => v === this.path[i]);
     },
 
-    // ── Expand ─────────────────────────────────────────────────────
     togExp(id) { this.expanded[id] = !this.expanded[id]; },
     isExp(id)  { return !!this.expanded[id]; },
     expandPath(ids) { ids.forEach(id => { this.expanded[id] = true; }); },
 
-    // ── Inline Edit ────────────────────────────────────────────────
     startEdit(node) {
       this.editId  = node.id;
       this.editVal = node.name;
@@ -1314,13 +1424,9 @@ createApp({
         if (inp) { inp.focus(); inp.select(); }
       });
     },
-    saveEdit(node) {
-      if (this.editVal.trim()) node.name = this.editVal.trim();
-      this.editId = null;
-    },
-    cancelEdit() { this.editId = null; },
+    saveEdit(node)  { if (this.editVal.trim()) node.name = this.editVal.trim(); this.editId = null; },
+    cancelEdit()    { this.editId = null; },
 
-    // ── Add ────────────────────────────────────────────────────────
     addStation() {
       const s = mkStation();
       this.stationen.push(s);
@@ -1361,38 +1467,32 @@ createApp({
       this.$nextTick(() => this.startEdit(z));
     },
 
-    // ── Delete ─────────────────────────────────────────────────────
     delStation(si) {
       if (!confirm(`Station "${this.stationen[si].name}" wirklich löschen?\n(Alle untergeordneten Elemente werden ebenfalls gelöscht.)`)) return;
       this.stationen.splice(si, 1);
-      if (this.path && this.path[0] === si) this.path = null;
+      if (this.path?.[0] === si) this.path = null;
     },
     delBauraum(si, bi) {
-      const n = this.stationen[si].bauräume[bi].name;
-      if (!confirm(`Bauraum "${n}" wirklich löschen?`)) return;
+      if (!confirm(`Bauraum "${this.stationen[si].bauräume[bi].name}" wirklich löschen?`)) return;
       this.stationen[si].bauräume.splice(bi, 1);
-      if (this.path && this.path[0] === si && this.path[1] === bi) this.path = null;
+      if (this.path?.[0] === si && this.path?.[1] === bi) this.path = null;
     },
     delFunkDef(si, bi, fdi) {
-      const n = this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi].name;
-      if (!confirm(`Funktionsdefinition "${n}" wirklich löschen?`)) return;
+      if (!confirm(`Funktionsdefinition "${this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi].name}" wirklich löschen?`)) return;
       this.stationen[si].bauräume[bi].funktionsdefinitionen.splice(fdi, 1);
-      if (this.path && this.path[0] === si && this.path[1] === bi && this.path[2] === fdi) this.path = null;
+      if (this.path?.[0]===si && this.path?.[1]===bi && this.path?.[2]===fdi) this.path = null;
     },
     delFunktion(si, bi, fdi, fi) {
-      const n = this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi].funktionen[fi].name;
-      if (!confirm(`Funktion "${n}" wirklich löschen?`)) return;
+      if (!confirm(`Funktion "${this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi].funktionen[fi].name}" wirklich löschen?`)) return;
       this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi].funktionen.splice(fi, 1);
-      if (this.path && this.path.length >= 4 && this.path[0]===si && this.path[1]===bi && this.path[2]===fdi && this.path[3]===fi) this.path = null;
+      if (this.path?.length >= 4 && this.path[0]===si && this.path[1]===bi && this.path[2]===fdi && this.path[3]===fi) this.path = null;
     },
     delZustand(si, bi, fdi, fi, zi) {
-      const n = this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi].funktionen[fi].zustände[zi].name;
-      if (!confirm(`Zustand "${n}" wirklich löschen?`)) return;
+      if (!confirm(`Zustand "${this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi].funktionen[fi].zustände[zi].name}" wirklich löschen?`)) return;
       this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi].funktionen[fi].zustände.splice(zi, 1);
-      if (this.path && this.path.length === 5 && this.path[4] === zi) this.path = null;
+      if (this.path?.length === 5 && this.path[4] === zi) this.path = null;
     },
 
-    // ── Persistence ────────────────────────────────────────────────
     saveLS() {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify({
@@ -1400,10 +1500,10 @@ createApp({
           stationen: this.stationen,
           einstellungen: this.einstellungen,
         }));
-        this.savedMsg = '✓ Automatisch gespeichert';
+        this.savedMsg = '✓ Gespeichert';
         clearTimeout(this._saveTimer);
         this._saveTimer = setTimeout(() => { this.savedMsg = ''; }, 2500);
-      } catch(e) { /* quota exceeded or private mode */ }
+      } catch(e) {}
     },
     loadLS() {
       try {
@@ -1417,10 +1517,9 @@ createApp({
           if (d.einstellungen.zustandsNamen)  this.einstellungen.zustandsNamen  = d.einstellungen.zustandsNamen;
           if (d.einstellungen.stellglieder)   this.einstellungen.stellglieder   = d.einstellungen.stellglieder;
         }
-      } catch(e) { /* corrupt data */ }
+      } catch(e) {}
     },
 
-    // ── JSON Export/Import ─────────────────────────────────────────
     exportJSON() {
       const blob = new Blob([JSON.stringify({ projektname: this.projektname, stationen: this.stationen }, null, 2)],
                             { type: 'application/json' });
@@ -1441,17 +1540,14 @@ createApp({
             if (d.einstellungen.zustandsNamen)  this.einstellungen.zustandsNamen  = d.einstellungen.zustandsNamen;
             if (d.einstellungen.stellglieder)   this.einstellungen.stellglieder   = d.einstellungen.stellglieder;
           }
-          this.path        = null;
+          this.path = null;
           alert('✓ Datei erfolgreich geladen!');
-        } catch(err) {
-          alert('Fehler beim Laden: ' + err.message);
-        }
+        } catch(err) { alert('Fehler beim Laden: ' + err.message); }
       };
       reader.readAsText(file);
       ev.target.value = '';
     },
 
-    // ── Flatten for exports ────────────────────────────────────────
     flattenData() {
       const rows = [];
       for (const s of this.stationen)
@@ -1469,80 +1565,44 @@ createApp({
       return rows;
     },
 
-    // ── Excel Export ───────────────────────────────────────────────
     exportExcel() {
       const rows = this.flattenData();
-      if (!rows.length) { alert('Noch keine Zustände erfasst. Bitte zuerst Daten eingeben.'); return; }
-
+      if (!rows.length) { alert('Noch keine Zustände erfasst.'); return; }
       const HDR = ['Station','Bauraum','Funktionsdefinition','Funktion','Zustand',
                    'Stellglied','Bemerkungen','DI','DO','SDI','SDO','AI','AO','Sonstige','Feldbus-Koppler'];
       const wsData = [HDR, ...rows.map(r => HDR.map(h => r[h] ?? ''))];
-
       const ws = XLSX.utils.aoa_to_sheet(wsData);
-      ws['!cols'] = [
-        {wch:24},{wch:24},{wch:30},{wch:30},{wch:16},
-        {wch:40},{wch:40},{wch:5},{wch:5},{wch:5},{wch:5},{wch:5},{wch:5},{wch:9},{wch:16}
-      ];
+      ws['!cols'] = [{wch:24},{wch:24},{wch:30},{wch:30},{wch:16},{wch:40},{wch:40},
+                     {wch:5},{wch:5},{wch:5},{wch:5},{wch:5},{wch:5},{wch:9},{wch:16}];
       ws['!freeze'] = { xSplit: 0, ySplit: 1, topLeftCell: 'A2', activePane: 'bottomLeft' };
-
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Übergabeprotokoll');
       XLSX.writeFile(wb, `${this.projektname}.xlsx`);
     },
 
-    // ── PDF Export ─────────────────────────────────────────────────
     exportPDF() {
       const rows = this.flattenData();
-      if (!rows.length) { alert('Noch keine Zustände erfasst. Bitte zuerst Daten eingeben.'); return; }
-
+      if (!rows.length) { alert('Noch keine Zustände erfasst.'); return; }
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a3' });
-
-      doc.setFontSize(16);
-      doc.setTextColor(30, 58, 95);
+      doc.setFontSize(16); doc.setTextColor(30, 58, 95);
       doc.text(this.projektname, 12, 16);
-      doc.setFontSize(9);
-      doc.setTextColor(100, 116, 139);
-      const stats = `Erstellt: ${new Date().toLocaleDateString('de-DE')}  |  ${this.stationen.length} Station(en)  |  ${rows.length} Zustand/Zustände`;
-      doc.text(stats, 12, 23);
-
-      const stNames    = [...new Set(rows.map(r => r.Station))];
-      const stColors   = [[232,244,253],[255,249,230],[240,255,240],[255,240,245],[240,240,255],[255,244,230]];
-
-      const body = rows.map(r => [
-        r.Station, r.Bauraum, r.Funktionsdefinition, r.Funktion, r.Zustand,
-        r.Stellglied, r.Bemerkungen,
-        r.DI, r.DO, r.SDI, r.SDO, r.AI, r.AO, r.Sonstige, r['Feldbus-Koppler']
-      ]);
-
+      doc.setFontSize(9); doc.setTextColor(100, 116, 139);
+      doc.text(`Erstellt: ${new Date().toLocaleDateString('de-DE')}  |  ${this.stationen.length} Station(en)  |  ${rows.length} Zustand/Zustände`, 12, 23);
+      const stNames  = [...new Set(rows.map(r => r.Station))];
+      const stColors = [[232,244,253],[255,249,230],[240,255,240],[255,240,245],[240,240,255],[255,244,230]];
+      const body = rows.map(r => [r.Station,r.Bauraum,r.Funktionsdefinition,r.Funktion,r.Zustand,
+                                   r.Stellglied,r.Bemerkungen,r.DI,r.DO,r.SDI,r.SDO,r.AI,r.AO,r.Sonstige,r['Feldbus-Koppler']]);
       doc.autoTable({
-        head: [['Station','Bauraum','Funktion-\ndefinition','Funktion','Zustand',
-                'Stellglied','Bemerkungen','DI','DO','SDI','SDO','AI','AO','Sons-\ntige','Feldbus-\nKoppler']],
-        body,
-        startY: 28,
-        theme: 'grid',
-        headStyles: {
-          fillColor: [30, 58, 95], textColor: 255,
-          fontStyle: 'bold', fontSize: 7,
-          halign: 'center', valign: 'middle',
-        },
+        head: [['Station','Bauraum','Funktion-\ndefinition','Funktion','Zustand','Stellglied','Bemerkungen','DI','DO','SDI','SDO','AI','AO','Sons-\ntige','Feldbus-\nKoppler']],
+        body, startY: 28, theme: 'grid',
+        headStyles: { fillColor: [30,58,95], textColor: 255, fontStyle: 'bold', fontSize: 7, halign: 'center', valign: 'middle' },
         bodyStyles: { fontSize: 6.5, valign: 'middle' },
         columnStyles: {
-          0:  { cellWidth: 26 },
-          1:  { cellWidth: 26 },
-          2:  { cellWidth: 30 },
-          3:  { cellWidth: 30 },
-          4:  { cellWidth: 16 },
-          5:  { cellWidth: 38 },
-          6:  { cellWidth: 36 },
-          7:  { cellWidth: 7, halign: 'center' },
-          8:  { cellWidth: 7, halign: 'center' },
-          9:  { cellWidth: 7, halign: 'center' },
-          10: { cellWidth: 7, halign: 'center' },
-          11: { cellWidth: 7, halign: 'center' },
-          12: { cellWidth: 7, halign: 'center' },
-          13: { cellWidth: 11, halign: 'center' },
-          14: { cellWidth: 17, halign: 'center' },
+          0:{cellWidth:26},1:{cellWidth:26},2:{cellWidth:30},3:{cellWidth:30},4:{cellWidth:16},
+          5:{cellWidth:38},6:{cellWidth:36},7:{cellWidth:7,halign:'center'},8:{cellWidth:7,halign:'center'},
+          9:{cellWidth:7,halign:'center'},10:{cellWidth:7,halign:'center'},11:{cellWidth:7,halign:'center'},
+          12:{cellWidth:7,halign:'center'},13:{cellWidth:11,halign:'center'},14:{cellWidth:17,halign:'center'},
         },
         didParseCell(d) {
           if (d.section === 'body') {
@@ -1552,47 +1612,34 @@ createApp({
         },
         margin: { left: 10, right: 10 },
       });
-
       const pc = doc.internal.getNumberOfPages();
       for (let i = 1; i <= pc; i++) {
         doc.setPage(i);
         doc.setFontSize(8); doc.setTextColor(160);
-        doc.text(`Seite ${i} / ${pc}`,
-                 doc.internal.pageSize.getWidth() - 12,
-                 doc.internal.pageSize.getHeight() - 7,
-                 { align: 'right' });
+        doc.text(`Seite ${i} / ${pc}`, doc.internal.pageSize.getWidth()-12, doc.internal.pageSize.getHeight()-7, { align: 'right' });
       }
-
       doc.save(`${this.projektname}.pdf`);
     },
 
-    // ── Preset management ──────────────────────────────────────────
     addPreset(cat) {
       const val = this.newPreset[cat].trim();
       if (!val) return;
-      if (!this.einstellungen[cat].includes(val)) {
-        this.einstellungen[cat].push(val);
-      }
+      if (!this.einstellungen[cat].includes(val)) this.einstellungen[cat].push(val);
       this.newPreset[cat] = '';
     },
-    delPreset(cat, idx) {
-      this.einstellungen[cat].splice(idx, 1);
-    },
+    delPreset(cat, idx) { this.einstellungen[cat].splice(idx, 1); },
 
-    // ── Utility ────────────────────────────────────────────────────
     _dl(blob, name) {
       const url = URL.createObjectURL(blob);
-      const a   = document.createElement('a');
-      a.href    = url;
-      a.download = name;
-      a.click();
+      const a = document.createElement('a');
+      a.href = url; a.download = name; a.click();
       URL.revokeObjectURL(url);
     },
   },
 
   watch: {
-    projektname()   { this.saveLS(); },
-    stationen:    { deep: true, handler() { this.saveLS(); } },
+    projektname()  { this.saveLS(); },
+    stationen:   { deep: true, handler() { this.saveLS(); } },
     einstellungen: { deep: true, handler() { this.saveLS(); } },
   },
 
