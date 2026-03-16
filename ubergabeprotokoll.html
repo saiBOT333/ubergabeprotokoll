@@ -714,6 +714,40 @@
       box-shadow: 0 0 0 3px var(--blue-ltr);
     }
 
+    /* ── Sidebar footer (export actions – mobile only) ──────── */
+    .sidebar-footer {
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      padding: 12px 10px 16px;
+      border-top: 1px solid var(--border);
+      background: rgba(255,255,255,0.65);
+      flex-shrink: 0;
+    }
+    .sf-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .sf-btn {
+      display: flex; align-items: center; gap: 8px;
+      padding: 11px 13px;
+      border: 1px solid var(--border-str);
+      border-radius: var(--r-sm);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 14px; font-weight: 500;
+      font-family: inherit;
+      color: var(--text);
+      transition: background var(--trans), border-color var(--trans);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .sf-btn:active { opacity: 0.8; transform: scale(0.98); }
+    .sf-btn-blue  { background: var(--blue);   border-color: var(--blue);   color: #fff; font-weight: 600; }
+    .sf-btn-green { background: #217346;        border-color: #217346;        color: #fff; font-weight: 600; }
+    .sf-btn-red   { background: #a4262c;        border-color: #a4262c;        color: #fff; font-weight: 600; }
+    .sf-btn-full  { grid-column: 1 / -1; }
+
     /* ═══════════════════ RESPONSIVE ════════════════════════════ */
 
     /* ── Tablet (768 – 1023px) ─────────────────────────────── */
@@ -726,55 +760,82 @@
 
     /* ── Mobile (< 768px) ─────────────────────────────────── */
     @media (max-width: 767px) {
-      :root { --toolbar-h: 54px; }
+      :root { --toolbar-h: 56px; }
 
-      .tb-hamburger { display: flex; }
-      .tb-title { display: none; }
-      .tb-logo  { margin-right: 0; }
-      #pname-input { width: 120px; font-size: 12px; }
-      .tb-saved { display: none; }
-      .tb-divider { display: none; }
+      /* Toolbar: only hamburger + logo + project name */
+      .tb-hamburger  { display: flex; }
+      .tb-title      { display: none; }
+      .tb-logo       { margin-right: 0; }
+      .tb-actions    { display: none; }   /* hide all action buttons */
+      .tb-sep        { display: none; }
+      .tb-saved      { display: none; }
+      .tb-divider    { display: none; }
 
-      /* Hide some toolbar buttons on mobile, show icon-only */
-      .btn-ghost .tb-label  { display: none; }
-      .btn-subtle .tb-label { display: none; }
+      /* Project name fills remaining toolbar space */
+      #pname-input {
+        flex: 1;
+        width: auto;
+        min-width: 0;
+        font-size: 14px;
+      }
 
       #legend { display: none; }
 
-      /* Sidebar becomes a full-height drawer */
+      /* ── Sidebar: full-screen drawer above toolbar ── */
       .sidebar-scrim { display: block; }
 
       #tree-panel {
         position: fixed;
         top: 0; left: 0; bottom: 0;
-        width: 88vw;
-        max-width: 320px;
-        z-index: 150;
-        margin-top: 0;
-        transform: translateX(-105%);
+        width: 85vw;
+        max-width: 340px;
+        z-index: 250;          /* above toolbar */
+        transform: translateX(-110%);
         box-shadow: none;
-        border-right: 1px solid var(--border);
+        border-right: none;
+        padding-top: 3px;       /* account for top accent stripe */
       }
       #tree-panel.open {
         transform: translateX(0);
         box-shadow: var(--sh-modal);
       }
+      .sidebar-scrim { z-index: 249; }
 
-      /* Back button visible on mobile when something is selected */
+      /* Show export footer inside sidebar */
+      .sidebar-footer { display: flex; }
+
+      /* ── Detail panel ── */
       .det-back-btn { display: flex; }
+      .det-hdr { padding: 14px 16px 12px; }
+      .det-body { padding: 12px 12px 24px; }
+      .card { padding: 14px 13px; }
 
-      /* Detail header padding */
-      .det-hdr { padding: 12px 16px 10px; }
-      .det-body { padding: 12px 14px 20px; }
+      /* Bigger touch targets for tree nodes */
+      .tn { min-height: 46px; }
+      .tn-arr { width: 22px; height: 22px; }
 
-      /* EA grid 2 columns on small screens */
-      .ea-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
-      .ea-toggle { width: 100%; min-width: 36px; }
+      /* EA grid: always 2 columns on mobile */
+      .ea-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .ea-toggle { width: 100%; height: 44px; font-size: 16px; }
+      .ea-key    { font-size: 13px; }
+      .ea-full   { font-size: 11px; max-width: 100%; }
+
+      /* Back button more prominent */
+      .det-back-btn {
+        font-size: 15px;
+        color: var(--blue);
+        gap: 6px;
+        padding-bottom: 12px;
+        font-weight: 500;
+      }
+
+      /* Breadcrumbs: hide on very small detail headers */
+      .det-bc { display: none; }
     }
 
-    @media (max-width: 480px) {
-      .ea-grid { grid-template-columns: repeat(2, 1fr); }
-      .det-title { font-size: 14px; }
+    @media (max-width: 400px) {
+      #tree-panel { width: 92vw; }
+      .det-title  { font-size: 15px; }
     }
 
     /* ═══════════════════ UTILITIES ════════════════════════════ */
@@ -808,42 +869,44 @@
     <span class="tb-sep"></span>
     <span class="tb-saved">{{ savedMsg }}</span>
 
-    <button class="btn btn-ghost" @click="triggerImport" title="JSON laden">
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M2 4h4l2 2h6v8H2V4z"/><path d="M2 8h12"/>
-      </svg>
-      <span class="tb-label">Laden</span>
-    </button>
+    <div class="tb-actions" style="display:flex;align-items:center;gap:4px;">
+      <button class="btn btn-ghost" @click="triggerImport" title="JSON laden">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 4h4l2 2h6v8H2V4z"/><path d="M2 8h12"/>
+        </svg>
+        <span class="tb-label">Laden</span>
+      </button>
 
-    <button class="btn btn-ghost" @click="exportJSON" title="Als JSON speichern">
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="2" y="2" width="12" height="13" rx="1.5"/><path d="M5 2v4h6V2"/><path d="M11 3h-1"/><path d="M4 9h8M4 12h5"/>
-      </svg>
-      <span class="tb-label">Speichern</span>
-    </button>
+      <button class="btn btn-ghost" @click="exportJSON" title="Als JSON speichern">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="2" width="12" height="13" rx="1.5"/><path d="M5 2v4h6V2"/><path d="M11 3h-1"/><path d="M4 9h8M4 12h5"/>
+        </svg>
+        <span class="tb-label">Speichern</span>
+      </button>
 
-    <button class="btn btn-green" @click="exportExcel" title="Als Excel exportieren">
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="2" y="2" width="12" height="12" rx="1.5"/><path d="M2 6h12M2 10h12M6 2v12M10 2v12"/>
-      </svg>
-      <span class="tb-label">Excel</span>
-    </button>
+      <button class="btn btn-green" @click="exportExcel" title="Als Excel exportieren">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="2" width="12" height="12" rx="1.5"/><path d="M2 6h12M2 10h12M6 2v12M10 2v12"/>
+        </svg>
+        <span class="tb-label">Excel</span>
+      </button>
 
-    <button class="btn btn-red" @click="exportPDF" title="Als PDF exportieren">
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M4 2h6l4 4v9H4V2z"/><path d="M10 2v4h4"/><path d="M6 9h4M6 12h3"/>
-      </svg>
-      <span class="tb-label">PDF</span>
-    </button>
+      <button class="btn btn-red" @click="exportPDF" title="Als PDF exportieren">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 2h6l4 4v9H4V2z"/><path d="M10 2v4h4"/><path d="M6 9h4M6 12h3"/>
+        </svg>
+        <span class="tb-label">PDF</span>
+      </button>
 
-    <div class="tb-divider"></div>
+      <div class="tb-divider"></div>
 
-    <button class="btn btn-subtle" @click="showSettings=true" title="Vorlagen konfigurieren">
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.1 3.1l1.4 1.4M11.5 11.5l1.4 1.4M3.1 12.9l1.4-1.4M11.5 4.5l1.4-1.4"/>
-      </svg>
-      <span class="tb-label">Vorlagen</span>
-    </button>
+      <button class="btn btn-subtle" @click="showSettings=true" title="Vorlagen konfigurieren">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.1 3.1l1.4 1.4M11.5 11.5l1.4 1.4M3.1 12.9l1.4-1.4M11.5 4.5l1.4-1.4"/>
+        </svg>
+        <span class="tb-label">Vorlagen</span>
+      </button>
+    </div>
 
     <input type="file" ref="fileInput" accept=".json" style="display:none" @change="onFileLoad" />
   </div>
@@ -1002,6 +1065,43 @@
         </template>
 
       </div><!-- tree-body -->
+
+      <!-- ── Sidebar Footer (mobile export actions) ── -->
+      <div class="sidebar-footer">
+        <div class="sf-grid">
+          <button class="sf-btn" @click="triggerImport; sidebarOpen=false">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 4h4l2 2h6v8H2V4z"/><path d="M2 8h12"/>
+            </svg>
+            Laden
+          </button>
+          <button class="sf-btn" @click="exportJSON; sidebarOpen=false">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="2" width="12" height="13" rx="1.5"/><path d="M5 2v4h6V2"/><path d="M4 9h8M4 12h5"/>
+            </svg>
+            Speichern
+          </button>
+          <button class="sf-btn sf-btn-green" @click="exportExcel; sidebarOpen=false">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="2" width="12" height="12" rx="1.5"/><path d="M2 6h12M2 10h12M6 2v12M10 2v12"/>
+            </svg>
+            Excel
+          </button>
+          <button class="sf-btn sf-btn-red" @click="exportPDF; sidebarOpen=false">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 2h6l4 4v9H4V2z"/><path d="M10 2v4h4"/><path d="M6 9h4M6 12h3"/>
+            </svg>
+            PDF
+          </button>
+          <button class="sf-btn sf-btn-full" @click="showSettings=true; sidebarOpen=false">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.1 3.1l1.4 1.4M11.5 11.5l1.4 1.4M3.1 12.9l1.4-1.4M11.5 4.5l1.4-1.4"/>
+            </svg>
+            Vorlagen konfigurieren
+          </button>
+        </div>
+      </div>
+
     </div><!-- tree-panel -->
 
     <!-- ──────── DETAIL PANEL ────────────────────────────── -->
@@ -1641,6 +1741,10 @@ createApp({
     projektname()  { this.saveLS(); },
     stationen:   { deep: true, handler() { this.saveLS(); } },
     einstellungen: { deep: true, handler() { this.saveLS(); } },
+    sidebarOpen(val) {
+      // prevent body scroll when mobile drawer is open
+      document.body.style.overflow = val ? 'hidden' : '';
+    },
   },
 
   mounted() {
