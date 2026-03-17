@@ -1310,6 +1310,18 @@
             <div class="child-empty" v-else>Noch keine Bauräume vorhanden.</div>
             <button class="add-child-btn" @click="addBauraum(path[0])">+ Bauraum hinzufügen</button>
           </div>
+          <div class="card" v-if="stationSummen.find(s => s.Station === curStation.name)">
+            <div class="card-title">E/A-Summe – {{ curStation.name }}</div>
+            <div class="ea-grid">
+              <div class="ea-item" v-for="ea in EA_FIELDS" :key="ea.key">
+                <div class="ea-key">{{ ea.key }}</div>
+                <div class="ea-input" style="display:flex;align-items:center;justify-content:center;font-weight:700;background:var(--bg-2,#f1f5f9);">
+                  {{ stationSummen.find(s => s.Station === curStation.name)[ea.key] }}
+                </div>
+                <div class="ea-full">{{ ea.label }}</div>
+              </div>
+            </div>
+          </div>
         </div>
       </template>
 
@@ -1653,6 +1665,19 @@ createApp({
     curFunkDef()  { return this.path?.length >= 3 ? this.curBauraum.funktionsdefinitionen[this.path[2]] : null; },
     curFunktion() { return this.path?.length >= 4 ? this.curFunkDef.funktionen[this.path[3]] : null; },
     curZustand()  { return this.path?.length >= 5 ? this.curFunktion.zustände[this.path[4]] : null; },
+    stationSummen() {
+      return this.stationen.map(s => {
+        const sum = { Station: s.name };
+        for (const ea of EA_FIELDS) sum[ea.key] = 0;
+        for (const b of s.bauräume)
+          for (const fd of b.funktionsdefinitionen)
+            for (const f of fd.funktionen)
+              for (const z of f.zustände)
+                for (const ea of EA_FIELDS)
+                  sum[ea.key] += parseInt(z[ea.key]) || 0;
+        return sum;
+      });
+    },
   },
 
   methods: {
@@ -1918,7 +1943,20 @@ createApp({
       if (!rows.length) { alert('Noch keine Zustände erfasst.'); return; }
       const HDR = ['Station','Bauraum','Funktionsdefinition','Funktion','Zustand',
                    'Stellglied','Bemerkungen','DI','DO','SDI','SDO','AI','AO','Sonstige','Feldbus-Koppler'];
-      const wsData = [HDR, ...rows.map(r => HDR.map(h => r[h] ?? ''))];
+      const EA_KEYS = ['DI','DO','SDI','SDO','AI','AO','Sonstige','Feldbus-Koppler'];
+      const stGroups = {};
+      for (const r of rows) {
+        if (!stGroups[r.Station]) stGroups[r.Station] = [];
+        stGroups[r.Station].push(r);
+      }
+      const wsData = [HDR];
+      for (const stName of Object.keys(stGroups)) {
+        for (const r of stGroups[stName])
+          wsData.push(HDR.map(h => r[h] ?? ''));
+        wsData.push(HDR.map(h => EA_KEYS.includes(h)
+          ? stGroups[stName].reduce((a, r) => a + (parseInt(r[h]) || 0), 0)
+          : h === 'Station' ? `∑ ${stName}` : ''));
+      }
       const ws = XLSX.utils.aoa_to_sheet(wsData);
       ws['!cols'] = [{wch:24},{wch:24},{wch:30},{wch:30},{wch:16},{wch:40},{wch:40},
                      {wch:5},{wch:5},{wch:5},{wch:5},{wch:5},{wch:5},{wch:9},{wch:16}];
@@ -1939,8 +1977,18 @@ createApp({
       doc.text(`Erstellt: ${new Date().toLocaleDateString('de-DE')}  |  ${this.stationen.length} Station(en)  |  ${rows.length} Zustand/Zustände`, 12, 23);
       const stNames  = [...new Set(rows.map(r => r.Station))];
       const stColors = [[232,244,253],[255,249,230],[240,255,240],[255,240,245],[240,240,255],[255,244,230]];
-      const body = rows.map(r => [r.Station,r.Bauraum,r.Funktionsdefinition,r.Funktion,r.Zustand,
-                                   r.Stellglied,r.Bemerkungen,r.DI,r.DO,r.SDI,r.SDO,r.AI,r.AO,r.Sonstige,r['Feldbus-Koppler']]);
+      const body = [];
+      const sumRowIndices = new Set();
+      for (const stName of stNames) {
+        const stRows = rows.filter(r => r.Station === stName);
+        for (const r of stRows)
+          body.push([r.Station,r.Bauraum,r.Funktionsdefinition,r.Funktion,r.Zustand,
+                     r.Stellglied,r.Bemerkungen,r.DI,r.DO,r.SDI,r.SDO,r.AI,r.AO,r.Sonstige,r['Feldbus-Koppler']]);
+        const sums = ['DI','DO','SDI','SDO','AI','AO','Sonstige','Feldbus-Koppler']
+          .map(k => stRows.reduce((a, r) => a + (parseInt(r[k]) || 0), 0));
+        sumRowIndices.add(body.length);
+        body.push([`∑ ${stName}`,'','','','','','', ...sums]);
+      }
       doc.autoTable({
         head: [['Station','Bauraum','Funktion-\ndefinition','Funktion','Zustand','Stellglied','Bemerkungen','DI','DO','SDI','SDO','AI','AO','Sons-\ntige','Feldbus-\nKoppler']],
         body, startY: 28, theme: 'grid',
@@ -1954,8 +2002,13 @@ createApp({
         },
         didParseCell(d) {
           if (d.section === 'body') {
-            const ci = stNames.indexOf(body[d.row.index][0]) % stColors.length;
-            d.cell.styles.fillColor = stColors[ci < 0 ? 0 : ci];
+            if (sumRowIndices.has(d.row.index)) {
+              d.cell.styles.fillColor = [220,230,242];
+              d.cell.styles.fontStyle = 'bold';
+            } else {
+              const ci = stNames.indexOf(body[d.row.index][0]) % stColors.length;
+              d.cell.styles.fillColor = stColors[ci < 0 ? 0 : ci];
+            }
           }
         },
         margin: { left: 10, right: 10 },
