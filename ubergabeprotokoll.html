@@ -21,6 +21,16 @@
        Responsive: Mobile drawer · Tablet · Desktop
     ═══════════════════════════════════════════════════════════════ */
     :root {
+      /* D365-style dark blue navigation bar */
+      --nav:           #002B5C;
+      --nav-h:         #003370;
+      --nav-text:      rgba(255,255,255,0.92);
+      --nav-text-2:    rgba(255,255,255,0.55);
+      --nav-icon:      rgba(255,255,255,0.85);
+      --nav-hover:     rgba(255,255,255,0.10);
+      --nav-active:    rgba(255,255,255,0.18);
+      --nav-border:    rgba(0,0,0,0.25);
+
       --blue:          #0078d4;
       --blue-h:        #106ebe;
       --blue-p:        #005a9e;
@@ -107,7 +117,7 @@
       position: fixed;
       top: 0; left: 0; right: 0;
       height: 3px;
-      background: linear-gradient(90deg, var(--blue) 0%, #4da8e0 60%, #50c8c8 100%);
+      background: linear-gradient(90deg, #0091ea 0%, #00b4d8 60%, #48cae4 100%);
       z-index: 300;
       flex-shrink: 0;
     }
@@ -118,9 +128,9 @@
       min-height: var(--toolbar-h);
       max-height: var(--toolbar-h);
       margin-top: 3px;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      box-shadow: var(--sh-1);
+      background: var(--nav);
+      border-bottom: 1px solid var(--nav-border);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
       display: flex;
       align-items: center;
       padding: 0 8px 0 12px;
@@ -137,16 +147,17 @@
       border: none; background: transparent;
       border-radius: var(--r-sm);
       cursor: pointer;
-      color: var(--text-2);
+      color: var(--nav-icon);
       align-items: center; justify-content: center;
       flex-shrink: 0;
       transition: background var(--trans);
     }
-    .tb-hamburger:hover { background: var(--hover); }
+    .tb-hamburger:hover { background: var(--nav-hover); }
 
     .tb-logo {
       width: 34px; height: 34px;
-      background: var(--blue);
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.20);
       border-radius: var(--r-sm);
       display: flex; align-items: center; justify-content: center;
       color: #fff;
@@ -157,16 +168,16 @@
     .tb-title {
       font-size: 15px;
       font-weight: 600;
-      color: var(--text);
+      color: var(--nav-text);
       white-space: nowrap;
       margin-right: 6px;
       letter-spacing: -0.01em;
     }
 
     #pname-input {
-      background: transparent;
-      border: 1px solid transparent;
-      color: var(--text);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.18);
+      color: var(--nav-text);
       padding: 6px 9px;
       font-size: 14px;
       font-family: inherit;
@@ -174,25 +185,24 @@
       border-radius: var(--r-sm);
       transition: border-color var(--trans), background var(--trans), box-shadow var(--trans);
     }
-    #pname-input:hover  { background: var(--hover); border-color: var(--border-str); }
-    #pname-input:focus  { outline: none; background: var(--surface); border-color: var(--blue); box-shadow: 0 0 0 2px var(--blue-ltr); }
-    #pname-input::placeholder { color: var(--text-3); }
+    #pname-input:hover  { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.35); }
+    #pname-input:focus  { outline: none; background: rgba(255,255,255,0.16); border-color: rgba(255,255,255,0.50); box-shadow: 0 0 0 2px rgba(255,255,255,0.08); }
+    #pname-input::placeholder { color: rgba(255,255,255,0.40); }
 
     .tb-sep   { flex: 1; }
 
     .tb-saved {
       font-size: 11px;
-      color: var(--text-3);
+      color: var(--nav-text-2);
       white-space: nowrap;
       padding: 0 8px;
     }
 
     .tb-divider {
       width: 1px; height: 20px;
-      background: var(--border-str);
+      background: rgba(255,255,255,0.22);
       flex-shrink: 0;
       margin: 0 2px;
-      opacity: 0.5;
     }
 
     /* ── Buttons ─────────────────────────────────────────────── */
@@ -243,6 +253,35 @@
     .btn-subtle:hover { background: var(--blue-ltr); border-color: var(--blue); color: var(--blue); }
 
     .btn-sm { padding: 0 12px; height: 32px; font-size: 13px; }
+
+    /* ── Toolbar-specific overrides for dark D365 nav bar ─────── */
+    #toolbar .btn {
+      color: var(--nav-icon);
+      border-color: transparent;
+    }
+    #toolbar .btn:hover {
+      background: var(--nav-hover);
+      border-color: rgba(255,255,255,0.20);
+      color: #fff;
+    }
+    #toolbar .btn:active {
+      background: var(--nav-active);
+      transform: scale(0.98);
+    }
+    #toolbar .btn-primary {
+      background: rgba(255,255,255,0.18);
+      border-color: rgba(255,255,255,0.35);
+      color: #fff;
+      font-weight: 600;
+    }
+    #toolbar .btn-primary:hover {
+      background: rgba(255,255,255,0.26);
+      border-color: rgba(255,255,255,0.50);
+    }
+    #toolbar .btn-green  { background: #217346; border-color: rgba(255,255,255,0.15); color: #fff; }
+    #toolbar .btn-green:hover  { background: #1d6840; }
+    #toolbar .btn-red    { background: #a4262c; border-color: rgba(255,255,255,0.15); color: #fff; }
+    #toolbar .btn-red:hover    { background: #8f2023; }
 
     /* ── Toolbar label (btn with text label) ─────────────────── */
     .tb-label { display: inline; }
