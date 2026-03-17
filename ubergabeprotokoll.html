@@ -13,6 +13,7 @@
   <link rel="apple-touch-icon" href="icon.svg">
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <style>
@@ -2077,32 +2078,106 @@ createApp({
       return rows;
     },
 
-    exportExcel() {
+    async exportExcel() {
       const rows = this.flattenData();
       if (!rows.length) { alert('Noch keine Zustände erfasst.'); return; }
-      const HDR = ['Station','Bauraum','Funktionsdefinition','Funktion','Zustand',
-                   'Stellglied','Bemerkungen','DI','DO','SDI','SDO','AI','AO','Sonstige','Feldbus-Koppler'];
-      const EA_KEYS = ['DI','DO','SDI','SDO','AI','AO','Sonstige','Feldbus-Koppler'];
-      const stGroups = {};
-      for (const r of rows) {
-        if (!stGroups[r.Station]) stGroups[r.Station] = [];
-        stGroups[r.Station].push(r);
+
+      const wb = new ExcelJS.Workbook();
+      wb.creator = 'Übergabeprotokoll App';
+      wb.created = new Date();
+      const ws = wb.addWorksheet('Übergabeprotokoll');
+
+      // Farben
+      const navy    = { argb: 'FF0F2942' };
+      const navyMid = { argb: 'FF173458' };
+      const steelBg = { argb: 'FFD2E1F5' };
+      const steelFg = { argb: 'FF143264' };
+      const white   = { argb: 'FFFFFFFF' };
+      const grpBlue = { argb: 'FF163F6E' };
+      const stColors = [
+        { argb: 'FFF5FAFF' }, { argb: 'FFFFFDF4' },
+        { argb: 'FFF6FFF6' }, { argb: 'FFFFF7FD' },
+      ];
+
+      // Spaltenbreiten (14 Spalten, ohne Station)
+      ws.columns = [
+        { key:'a', width:28 }, { key:'b', width:28 }, { key:'c', width:32 }, { key:'d', width:16 },
+        { key:'e', width:42 }, { key:'f', width:40 },
+        { key:'g', width:7  }, { key:'h', width:7  }, { key:'i', width:7  }, { key:'j', width:7  },
+        { key:'k', width:7  }, { key:'l', width:7  }, { key:'m', width:10 }, { key:'n', width:15 },
+      ];
+
+      const NCOLS = 14;
+      const centerBold = (cell, bg, fg, sz = 8) => {
+        cell.fill = { type:'pattern', pattern:'solid', fgColor: bg };
+        cell.font = { bold:true, color: fg, size: sz };
+        cell.alignment = { horizontal:'center', vertical:'middle', wrapText:false };
+      };
+
+      // Zeile 1: E/A-Gruppenbezeichner
+      const grp = ws.addRow(['','','','','','','Digital','','Sicher D.','','Analog','','Sonstige','Feldbus']);
+      grp.height = 14;
+      grp.eachCell({ includeEmpty:true }, (cell, col) => {
+        cell.fill = { type:'pattern', pattern:'solid', fgColor: col <= 6 ? navy : grpBlue };
+        cell.font = { bold:true, color:white, size:7 };
+        cell.alignment = { horizontal:'center', vertical:'middle' };
+      });
+      ws.mergeCells(1,7,1,8); ws.mergeCells(1,9,1,10); ws.mergeCells(1,11,1,12);
+
+      // Zeile 2: Spaltenbezeichner
+      const hdr = ws.addRow(['Bauraum','Funk.-Def.','Funktion','Zustand','Stellglied','Bemerkungen','DI','DO','SDI','SDO','AI','AO','Sons.','Feldbus']);
+      hdr.height = 16;
+      hdr.eachCell({ includeEmpty:true }, cell => centerBold(cell, navyMid, white, 8.5));
+
+      // Zeilen einfrieren
+      ws.views = [{ state:'frozen', xSplit:0, ySplit:2, topLeftCell:'A3' }];
+
+      // Daten
+      const stNames = [...new Set(rows.map(r => r.Station))];
+      for (let si = 0; si < stNames.length; si++) {
+        const stName = stNames[si];
+        const stRows = rows.filter(r => r.Station === stName);
+        const stColor = stColors[si % stColors.length];
+
+        // Stations-Sektionszeile
+        const sec = ws.addRow([stName,'','','','','','','','','','','','','']);
+        ws.mergeCells(sec.number, 1, sec.number, NCOLS);
+        sec.height = 14;
+        sec.eachCell({ includeEmpty:true }, cell => {
+          cell.fill = { type:'pattern', pattern:'solid', fgColor: navy };
+          cell.font = { bold:true, color:white, size:10 };
+          cell.alignment = { vertical:'middle' };
+        });
+
+        // Datenzeilen
+        for (const r of stRows) {
+          const dr = ws.addRow([
+            r.Bauraum, r.Funktionsdefinition, r.Funktion, r.Zustand,
+            r.Stellglied, r.Bemerkungen,
+            r.DI||'', r.DO||'', r.SDI||'', r.SDO||'', r.AI||'', r.AO||'', r.Sonstige||'', r['Feldbus-Koppler']||'',
+          ]);
+          dr.height = 14;
+          dr.eachCell({ includeEmpty:true }, (cell, col) => {
+            cell.fill = { type:'pattern', pattern:'solid', fgColor: stColor };
+            cell.font = { size:9 };
+            cell.alignment = { vertical:'middle', horizontal: col > 6 ? 'center' : 'left', wrapText: col <= 6 };
+          });
+        }
+
+        // Summenzeile
+        const sums = ['DI','DO','SDI','SDO','AI','AO','Sonstige','Feldbus-Koppler']
+          .map(k => stRows.reduce((a, r) => a + (parseInt(r[k]) || 0), 0));
+        const sr = ws.addRow(['','',`∑ ${stName}`,'','','',...sums]);
+        sr.height = 14;
+        sr.eachCell({ includeEmpty:true }, (cell, col) => {
+          cell.fill = { type:'pattern', pattern:'solid', fgColor: steelBg };
+          cell.font = { bold:true, color:steelFg, size:9 };
+          cell.alignment = { vertical:'middle', horizontal: col > 6 ? 'center' : 'left' };
+        });
       }
-      const wsData = [HDR];
-      for (const stName of Object.keys(stGroups)) {
-        for (const r of stGroups[stName])
-          wsData.push(HDR.map(h => r[h] ?? ''));
-        wsData.push(HDR.map(h => EA_KEYS.includes(h)
-          ? stGroups[stName].reduce((a, r) => a + (parseInt(r[h]) || 0), 0)
-          : h === 'Station' ? `∑ ${stName}` : ''));
-      }
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
-      ws['!cols'] = [{wch:24},{wch:24},{wch:30},{wch:30},{wch:16},{wch:40},{wch:40},
-                     {wch:5},{wch:5},{wch:5},{wch:5},{wch:5},{wch:5},{wch:9},{wch:16}];
-      ws['!freeze'] = { xSplit: 0, ySplit: 1, topLeftCell: 'A2', activePane: 'bottomLeft' };
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Übergabeprotokoll');
-      XLSX.writeFile(wb, `${this.projektname}.xlsx`);
+
+      const buffer = await wb.xlsx.writeBuffer();
+      this._dl(new Blob([buffer], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `${this.projektname}.xlsx`);
     },
 
     exportPDF() {
@@ -2110,53 +2185,133 @@ createApp({
       if (!rows.length) { alert('Noch keine Zustände erfasst.'); return; }
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a3' });
-      doc.setFontSize(16); doc.setTextColor(30, 58, 95);
-      doc.text(this.projektname, 12, 16);
-      doc.setFontSize(9); doc.setTextColor(100, 116, 139);
-      doc.text(`Erstellt: ${new Date().toLocaleDateString('de-DE')}  |  ${this.stationen.length} Station(en)  |  ${rows.length} Zustand/Zustände`, 12, 23);
-      const stNames  = [...new Set(rows.map(r => r.Station))];
-      const stColors = [[232,244,253],[255,249,230],[240,255,240],[255,240,245],[240,240,255],[255,244,230]];
+      const W = doc.internal.pageSize.getWidth();
+      const H = doc.internal.pageSize.getHeight();
+
+      // ── Seiten-Header (dunkle Leiste) ──────────────────────────
+      const drawHeader = () => {
+        doc.setFillColor(15, 41, 66);
+        doc.rect(0, 0, W, 30, 'F');
+        // Subtiler Glanz-Streifen oben
+        doc.setFillColor(255, 255, 255);
+        doc.setGState(new doc.GState({ opacity: 0.04 }));
+        doc.rect(0, 0, W, 8, 'F');
+        doc.setGState(new doc.GState({ opacity: 1 }));
+        // Projektname
+        doc.setFontSize(17); doc.setTextColor(255, 255, 255); doc.setFont(undefined, 'bold');
+        doc.text(this.projektname, 12, 13);
+        // Metadaten
+        doc.setFont(undefined, 'normal');
+        doc.setFontSize(8.5); doc.setTextColor(140, 175, 210);
+        doc.text(
+          `Erstellt: ${new Date().toLocaleDateString('de-DE')}  ·  ${this.stationen.length} Station(en)  ·  ${rows.length} Zustand/Zustände`,
+          12, 22
+        );
+      };
+      drawHeader();
+
+      // ── Daten aufbauen ──────────────────────────────────────────
+      const stNames = [...new Set(rows.map(r => r.Station))];
+      const stColors = [
+        [245, 250, 255], [255, 253, 244], [246, 255, 246], [255, 247, 253],
+        [244, 248, 255], [255, 252, 246],
+      ];
       const body = [];
+      const stationHeaderIndices = new Set();
       const sumRowIndices = new Set();
-      for (const stName of stNames) {
+      const rowStationIndex = []; // für Farbzuweisung
+
+      for (let si = 0; si < stNames.length; si++) {
+        const stName = stNames[si];
         const stRows = rows.filter(r => r.Station === stName);
-        for (const r of stRows)
-          body.push([r.Station,r.Bauraum,r.Funktionsdefinition,r.Funktion,r.Zustand,
-                     r.Stellglied,r.Bemerkungen,r.DI,r.DO,r.SDI,r.SDO,r.AI,r.AO,r.Sonstige,r['Feldbus-Koppler']]);
+
+        // Stations-Sektionszeile
+        stationHeaderIndices.add(body.length);
+        rowStationIndex.push(si);
+        body.push([stName, '', '', '', '', '', '', '', '', '', '', '', '', '']);
+
+        // Datenzeilen
+        for (const r of stRows) {
+          rowStationIndex.push(si);
+          body.push([
+            r.Bauraum, r.Funktionsdefinition, r.Funktion, r.Zustand,
+            r.Stellglied, r.Bemerkungen,
+            r.DI, r.DO, r.SDI, r.SDO, r.AI, r.AO, r.Sonstige, r['Feldbus-Koppler'],
+          ]);
+        }
+
+        // Summenzeile
         const sums = ['DI','DO','SDI','SDO','AI','AO','Sonstige','Feldbus-Koppler']
           .map(k => stRows.reduce((a, r) => a + (parseInt(r[k]) || 0), 0));
         sumRowIndices.add(body.length);
-        body.push([`∑ ${stName}`,'','','','','','', ...sums]);
+        rowStationIndex.push(si);
+        body.push(['', '', `∑ Summe`, '', '', '', ...sums]);
       }
+
+      // ── autoTable ───────────────────────────────────────────────
       doc.autoTable({
-        head: [['Station','Bauraum','Funktion-\ndefinition','Funktion','Zustand','Stellglied','Bemerkungen','DI','DO','SDI','SDO','AI','AO','Sons-\ntige','Feldbus-\nKoppler']],
-        body, startY: 28, theme: 'grid',
-        headStyles: { fillColor: [30,58,95], textColor: 255, fontStyle: 'bold', fontSize: 7, halign: 'center', valign: 'middle' },
-        bodyStyles: { fontSize: 6.5, valign: 'middle' },
+        head: [
+          // Zeile 1: E/A-Gruppenbezeichner
+          [
+            {content:'', colSpan:6, styles:{fillColor:[15,41,66], textColor:255}},
+            {content:'Digital',   colSpan:2, styles:{halign:'center', fillColor:[22,64,110], textColor:[180,210,240], fontSize:6, fontStyle:'bold'}},
+            {content:'Sicher D.', colSpan:2, styles:{halign:'center', fillColor:[18,55,95],  textColor:[180,210,240], fontSize:6, fontStyle:'bold'}},
+            {content:'Analog',    colSpan:2, styles:{halign:'center', fillColor:[22,64,110], textColor:[180,210,240], fontSize:6, fontStyle:'bold'}},
+            {content:'Sons.',     colSpan:1, styles:{halign:'center', fillColor:[18,55,95],  textColor:[180,210,240], fontSize:6, fontStyle:'bold'}},
+            {content:'Feldbus',   colSpan:1, styles:{halign:'center', fillColor:[22,64,110], textColor:[180,210,240], fontSize:6, fontStyle:'bold'}},
+          ],
+          // Zeile 2: Spaltenbezeichner
+          ['Bauraum','Funk.-\nDefinition','Funktion','Zustand','Stellglied','Bemerkungen',
+           'DI','DO','SDI','SDO','AI','AO','Sons.','Feldbus'],
+        ],
+        body,
+        startY: 34,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [30, 58, 95], textColor: 255,
+          fontStyle: 'bold', fontSize: 7, halign: 'center', valign: 'middle',
+        },
+        bodyStyles: { fontSize: 7, valign: 'middle', minCellHeight: 6 },
         columnStyles: {
-          0:{cellWidth:26},1:{cellWidth:26},2:{cellWidth:30},3:{cellWidth:30},4:{cellWidth:16},
-          5:{cellWidth:38},6:{cellWidth:36},7:{cellWidth:7,halign:'center'},8:{cellWidth:7,halign:'center'},
-          9:{cellWidth:7,halign:'center'},10:{cellWidth:7,halign:'center'},11:{cellWidth:7,halign:'center'},
-          12:{cellWidth:7,halign:'center'},13:{cellWidth:11,halign:'center'},14:{cellWidth:17,halign:'center'},
+          0:{cellWidth:30}, 1:{cellWidth:30}, 2:{cellWidth:35}, 3:{cellWidth:17},
+          4:{cellWidth:58}, 5:{cellWidth:52},
+          6:{cellWidth:10,halign:'center'}, 7:{cellWidth:10,halign:'center'},
+          8:{cellWidth:10,halign:'center'}, 9:{cellWidth:10,halign:'center'},
+          10:{cellWidth:10,halign:'center'},11:{cellWidth:10,halign:'center'},
+          12:{cellWidth:13,halign:'center'},13:{cellWidth:20,halign:'center'},
         },
         didParseCell(d) {
           if (d.section === 'body') {
-            if (sumRowIndices.has(d.row.index)) {
-              d.cell.styles.fillColor = [220,230,242];
+            const ri = d.row.index;
+            if (stationHeaderIndices.has(ri)) {
+              // Stations-Sektionszeile: dunkel, weiß, groß
+              d.cell.styles.fillColor = [23, 52, 88];
+              d.cell.styles.textColor = [255, 255, 255];
               d.cell.styles.fontStyle = 'bold';
+              d.cell.styles.fontSize = 9.5;
+              d.cell.styles.minCellHeight = 9;
+            } else if (sumRowIndices.has(ri)) {
+              // Summenzeile: Stahlblau, fett
+              d.cell.styles.fillColor = [210, 225, 245];
+              d.cell.styles.fontStyle = 'bold';
+              d.cell.styles.textColor = [20, 50, 100];
             } else {
-              const ci = stNames.indexOf(body[d.row.index][0]) % stColors.length;
-              d.cell.styles.fillColor = stColors[ci < 0 ? 0 : ci];
+              // Datenzeile: sehr subtile Stationsfarbe
+              const si = rowStationIndex[ri] % stColors.length;
+              d.cell.styles.fillColor = stColors[si];
             }
           }
         },
         margin: { left: 10, right: 10 },
+        didDrawPage: () => drawHeader(),
       });
+
+      // ── Seitenzahlen ────────────────────────────────────────────
       const pc = doc.internal.getNumberOfPages();
       for (let i = 1; i <= pc; i++) {
         doc.setPage(i);
         doc.setFontSize(8); doc.setTextColor(160);
-        doc.text(`Seite ${i} / ${pc}`, doc.internal.pageSize.getWidth()-12, doc.internal.pageSize.getHeight()-7, { align: 'right' });
+        doc.text(`Seite ${i} / ${pc}`, W - 12, H - 7, { align: 'right' });
       }
       doc.save(`${this.projektname}.pdf`);
     },
