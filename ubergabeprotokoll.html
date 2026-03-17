@@ -611,7 +611,7 @@
       color: var(--blue);
     }
 
-    /* ═══════════════════ E/A TOGGLES ═══════════════════════════ */
+    /* ═══════════════════ E/A FELDER ════════════════════════════ */
     .ea-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -619,22 +619,19 @@
     }
     .ea-item { display: flex; flex-direction: column; align-items: center; gap: 5px; }
     .ea-key  { font-size: 12px; font-weight: 700; color: var(--text-2); letter-spacing: 0.03em; }
-    .ea-toggle {
-      width: 52px; height: 36px;
+    .ea-input {
+      width: 100%; height: 36px;
       border-radius: var(--r-sm);
       border: 1.5px solid var(--border-str);
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 14px; font-weight: 700;
-      transition: all var(--trans);
+      padding: 0 8px;
+      font-size: 14px; font-weight: 600;
+      text-align: center;
       background: var(--surface-tint);
-      color: var(--text-3);
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
+      color: var(--text-1);
+      transition: border-color var(--trans), box-shadow var(--trans);
+      box-sizing: border-box;
     }
-    .ea-toggle:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-ltr); }
-    .ea-toggle.on    { background: var(--blue); border-color: var(--blue); color: #fff; box-shadow: var(--sh-1); }
-    .ea-toggle.on:hover { background: var(--blue-h); }
+    .ea-input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 2px var(--blue-ltr); }
     .ea-full { font-size: 10px; color: var(--text-3); text-align: center; max-width: 66px; line-height: 1.35; }
 
     /* ═══════════════════ SCROLLBAR ════════════════════════════ */
@@ -862,7 +859,7 @@
 
       /* EA grid: 2 columns, big tap targets */
       .ea-grid   { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-      .ea-toggle { width: 100%; height: 48px; font-size: 18px; }
+      .ea-input  { width: 100%; height: 48px; font-size: 18px; }
       .ea-key    { font-size: 13px; }
       .ea-full   { font-size: 11px; max-width: 100%; }
       .ea-item   { gap: 6px; }
@@ -1375,14 +1372,11 @@
             </div>
           </div>
           <div class="card">
-            <div class="card-title">E/A-Zuordnung — tippen zum Umschalten (0 / 1)</div>
+            <div class="card-title">E/A-Zuordnung</div>
             <div class="ea-grid">
               <div class="ea-item" v-for="ea in EA_FIELDS" :key="ea.key">
                 <div class="ea-key">{{ ea.key }}</div>
-                <div class="ea-toggle" :class="{on: curZustand[ea.key] === 1}"
-                     @click="curZustand[ea.key] = curZustand[ea.key] === 1 ? 0 : 1">
-                  {{ curZustand[ea.key] === 1 ? '1' : '0' }}
-                </div>
+                <input class="ea-input" type="text" v-model="curZustand[ea.key]" placeholder="—" />
                 <div class="ea-full">{{ ea.label }}</div>
               </div>
             </div>
@@ -1501,7 +1495,7 @@ function mkFunkDef(name = 'Neue Funktionsdefinition') { return { id: uid(), name
 function mkFunktion(name = 'Neue Funktion')         { return { id: uid(), name, zustände: [] }; }
 function mkZustand(name = 'Neuer Zustand') {
   return { id: uid(), name, stellglied: '', bemerkungen: '',
-           DI: 0, DO: 0, SDI: 0, SDO: 0, AI: 0, AO: 0, Sonstige: 0, Feldbus: 0 };
+           DI: '', DO: '', SDI: '', SDO: '', AI: '', AO: '', Sonstige: '', Feldbus: '' };
 }
 
 const EA_FIELDS = [
