@@ -1063,7 +1063,10 @@
     <div id="tree-panel" :class="{open: sidebarOpen}">
       <div class="tree-hdr">
         <span>Projektstruktur</span>
-        <button class="btn btn-primary btn-sm" @click="addStation">+ Station</button>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span @click="showChangelog=true" style="font-size:10px;color:var(--text-3);cursor:pointer;padding:2px 6px;border-radius:99px;border:1px solid var(--border);user-select:none" title="Changelog anzeigen">v{{ version }}</span>
+          <button class="btn btn-primary btn-sm" @click="addStation">+ Station</button>
+        </div>
       </div>
       <div class="tree-body">
         <div class="tree-empty" v-if="stationen.length === 0">
@@ -1602,6 +1605,39 @@
     </div>
   </div>
 
+  <!-- ─────────────── CHANGELOG MODAL ───────────────────────── -->
+  <div class="modal-overlay" v-if="showChangelog" @click.self="closeChangelog">
+    <div class="modal" style="max-width:520px">
+      <div class="modal-hdr">
+        <span class="modal-title">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px">
+            <circle cx="8" cy="8" r="6.5"/><path d="M8 5v3.5l2 1.5"/>
+          </svg>
+          Was ist neu? – Version {{ version }}
+        </span>
+        <button class="modal-close" @click="closeChangelog" aria-label="Schließen">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M1 1l10 10M11 1L1 11"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div v-for="entry in changelog" :key="entry.version" style="margin-bottom:18px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <span style="background:var(--acc);color:#fff;font-size:11px;font-weight:700;padding:2px 9px;border-radius:99px">v{{ entry.version }}</span>
+            <span style="color:var(--text-3);font-size:12px">{{ entry.datum }}</span>
+          </div>
+          <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px">
+            <li v-for="(a, i) in entry.änderungen" :key="i" style="font-size:13px;color:var(--text-1)">{{ a }}</li>
+          </ul>
+        </div>
+      </div>
+      <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end">
+        <button class="btn btn-primary" @click="closeChangelog">Verstanden</button>
+      </div>
+    </div>
+  </div>
+
 </div><!-- app -->
 
 <script>
@@ -1631,6 +1667,23 @@ const EA_FIELDS = [
 ];
 
 const STORAGE_KEY = 'uebergabe_v1';
+const VERSION = '1.0.0';
+const CHANGELOG = [
+  {
+    version: '1.0.0',
+    datum: '17.03.2026',
+    änderungen: [
+      'Erste stabile Version der App',
+      'E/A-Summen pro Station: Neue Karte in der Detailansicht zeigt aufaddierte Werte aller E/A-Typen',
+      'Summenzeilen im Excel-Export nach jeder Station (∑ Stationsname)',
+      'Summenzeilen im PDF-Export nach jeder Station (hellblau, fett)',
+      'PWA-Unterstützung: App ist installierbar und offline nutzbar',
+      'Optimiertes Layout für mobile Geräte',
+      'Verschieben-Buttons für Baumebenen',
+      'Auto-Select bei Fokus auf E/A-Eingabefelder',
+    ],
+  },
+];
 
 createApp({
   data() {
@@ -1643,6 +1696,7 @@ createApp({
       editVal: '',
       savedMsg: '',
       showSettings: false,
+      showChangelog: false,
       sidebarOpen: false,
       newPreset: { funktionsNamen: '', zustandsNamen: '', stellglieder: '' },
       einstellungen: {
@@ -1660,6 +1714,8 @@ createApp({
   },
 
   computed: {
+    version()     { return VERSION; },
+    changelog()   { return CHANGELOG; },
     curStation()  { return this.path?.length >= 1 ? this.stationen[this.path[0]] : null; },
     curBauraum()  { return this.path?.length >= 2 ? this.curStation.bauräume[this.path[1]] : null; },
     curFunkDef()  { return this.path?.length >= 3 ? this.curBauraum.funktionsdefinitionen[this.path[2]] : null; },
@@ -2030,6 +2086,11 @@ createApp({
     },
     delPreset(cat, idx) { this.einstellungen[cat].splice(idx, 1); },
 
+    closeChangelog() {
+      localStorage.setItem('uebergabe_seen_version', VERSION);
+      this.showChangelog = false;
+    },
+
     _dl(blob, name) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -2050,6 +2111,8 @@ createApp({
 
   mounted() {
     this.loadLS();
+    const seenVersion = localStorage.getItem('uebergabe_seen_version');
+    if (seenVersion !== VERSION) this.showChangelog = true;
   },
 
 }).mount('#app');
