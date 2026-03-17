@@ -494,6 +494,7 @@
       transition: background var(--trans), color var(--trans), border-color var(--trans);
     }
     .tn-btn-add:hover { background: #dff6dd; color: #107c10; border-color: #107c10; }
+    .tn-btn-cpy:hover { background: #deedf9; color: #0078d4; border-color: #0078d4; }
     .tn-btn-del:hover { background: #fde7e9; color: #a4262c; border-color: #a4262c; }
 
     .tree-add-root {
@@ -1080,6 +1081,7 @@
             <span v-else class="tn-lbl">{{ s.name }}</span>
             <div class="tn-acts">
               <button class="tn-btn tn-btn-add" @click.stop="addBauraum(si)" title="Bauraum hinzufügen">+</button>
+              <button class="tn-btn tn-btn-cpy" @click.stop="copyStation(si)" title="Station kopieren"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><path d="M8 4V2a1 1 0 00-1-1H2a1 1 0 00-1 1v5a1 1 0 001 1h2"/></svg></button>
               <button class="tn-btn tn-btn-del" @click.stop="delStation(si)" title="Löschen">×</button>
             </div>
           </div>
@@ -1105,6 +1107,7 @@
                 <span v-else class="tn-lbl">{{ b.name }}</span>
                 <div class="tn-acts">
                   <button class="tn-btn tn-btn-add" @click.stop="addFunkDef(si,bi)" title="Funktionsdefinition hinzufügen">+</button>
+                  <button class="tn-btn tn-btn-cpy" @click.stop="copyBauraum(si,bi)" title="Bauraum kopieren"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><path d="M8 4V2a1 1 0 00-1-1H2a1 1 0 00-1 1v5a1 1 0 001 1h2"/></svg></button>
                   <button class="tn-btn tn-btn-del" @click.stop="delBauraum(si,bi)" title="Löschen">×</button>
                 </div>
               </div>
@@ -1130,6 +1133,7 @@
                     <span v-else class="tn-lbl">{{ fd.name }}</span>
                     <div class="tn-acts">
                       <button class="tn-btn tn-btn-add" @click.stop="addFunktion(si,bi,fdi)" title="Funktion hinzufügen">+</button>
+                      <button class="tn-btn tn-btn-cpy" @click.stop="copyFunkDef(si,bi,fdi)" title="Funktionsdefinition kopieren"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><path d="M8 4V2a1 1 0 00-1-1H2a1 1 0 00-1 1v5a1 1 0 001 1h2"/></svg></button>
                       <button class="tn-btn tn-btn-del" @click.stop="delFunkDef(si,bi,fdi)" title="Löschen">×</button>
                     </div>
                   </div>
@@ -1156,6 +1160,7 @@
                         <span v-else class="tn-lbl">{{ f.name }}</span>
                         <div class="tn-acts">
                           <button class="tn-btn tn-btn-add" @click.stop="addZustand(si,bi,fdi,fi)" title="Zustand hinzufügen">+</button>
+                          <button class="tn-btn tn-btn-cpy" @click.stop="copyFunktion(si,bi,fdi,fi)" title="Funktion kopieren"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><path d="M8 4V2a1 1 0 00-1-1H2a1 1 0 00-1 1v5a1 1 0 001 1h2"/></svg></button>
                           <button class="tn-btn tn-btn-del" @click.stop="delFunktion(si,bi,fdi,fi)" title="Löschen">×</button>
                         </div>
                       </div>
@@ -1177,6 +1182,7 @@
                                  @click.stop @dblclick.stop />
                           <span v-else class="tn-lbl">{{ z.name }}</span>
                           <div class="tn-acts">
+                            <button class="tn-btn tn-btn-cpy" @click.stop="copyZustand(si,bi,fdi,fi,zi)" title="Zustand kopieren"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><path d="M8 4V2a1 1 0 00-1-1H2a1 1 0 00-1 1v5a1 1 0 001 1h2"/></svg></button>
                             <button class="tn-btn tn-btn-del" @click.stop="delZustand(si,bi,fdi,fi,zi)" title="Löschen">×</button>
                           </div>
                         </div>
@@ -1649,6 +1655,55 @@ createApp({
     },
     saveEdit(node)  { if (this.editVal.trim()) node.name = this.editVal.trim(); this.editId = null; },
     cancelEdit()    { this.editId = null; },
+
+    deepClone(node) {
+      const c = { ...node, id: uid() };
+      if (c.bauräume)              c.bauräume = c.bauräume.map(b => this.deepClone(b));
+      if (c.funktionsdefinitionen) c.funktionsdefinitionen = c.funktionsdefinitionen.map(fd => this.deepClone(fd));
+      if (c.funktionen)            c.funktionen = c.funktionen.map(f => this.deepClone(f));
+      if (c.zustände)              c.zustände = c.zustände.map(z => this.deepClone(z));
+      return c;
+    },
+
+    copyStation(si) {
+      const clone = this.deepClone(this.stationen[si]);
+      clone.name += ' (Kopie)';
+      this.stationen.splice(si + 1, 0, clone);
+      this.sel(si + 1);
+      this.$nextTick(() => this.startEdit(clone));
+    },
+    copyBauraum(si, bi) {
+      const clone = this.deepClone(this.stationen[si].bauräume[bi]);
+      clone.name += ' (Kopie)';
+      this.stationen[si].bauräume.splice(bi + 1, 0, clone);
+      this.expandPath([this.stationen[si].id, clone.id]);
+      this.sel(si, bi + 1);
+      this.$nextTick(() => this.startEdit(clone));
+    },
+    copyFunkDef(si, bi, fdi) {
+      const clone = this.deepClone(this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi]);
+      clone.name += ' (Kopie)';
+      this.stationen[si].bauräume[bi].funktionsdefinitionen.splice(fdi + 1, 0, clone);
+      this.expandPath([this.stationen[si].id, this.stationen[si].bauräume[bi].id, clone.id]);
+      this.sel(si, bi, fdi + 1);
+      this.$nextTick(() => this.startEdit(clone));
+    },
+    copyFunktion(si, bi, fdi, fi) {
+      const clone = this.deepClone(this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi].funktionen[fi]);
+      clone.name += ' (Kopie)';
+      this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi].funktionen.splice(fi + 1, 0, clone);
+      this.expandPath([this.stationen[si].id, this.stationen[si].bauräume[bi].id,
+                       this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi].id, clone.id]);
+      this.sel(si, bi, fdi, fi + 1);
+      this.$nextTick(() => this.startEdit(clone));
+    },
+    copyZustand(si, bi, fdi, fi, zi) {
+      const clone = this.deepClone(this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi].funktionen[fi].zustände[zi]);
+      clone.name += ' (Kopie)';
+      this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi].funktionen[fi].zustände.splice(zi + 1, 0, clone);
+      this.sel(si, bi, fdi, fi, zi + 1);
+      this.$nextTick(() => this.startEdit(clone));
+    },
 
     addStation() {
       const s = mkStation();
