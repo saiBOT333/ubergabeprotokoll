@@ -345,8 +345,8 @@
 
     /* ═══════════════════ TREE PANEL ════════════════════════════ */
     #tree-panel {
-      width: var(--sidebar-w);
       min-width: 180px;
+      max-width: 600px;
       flex-shrink: 0;
       background: rgba(255,255,255,0.80);
       backdrop-filter: blur(28px) saturate(180%);
@@ -356,6 +356,33 @@
       flex-direction: column;
       overflow: hidden;
       transition: transform var(--trans), box-shadow var(--trans);
+    }
+
+    /* ── Resize Handle ──────────────────────────────────────── */
+    #resize-handle {
+      width: 5px;
+      flex-shrink: 0;
+      cursor: col-resize;
+      position: relative;
+      z-index: 10;
+      background: transparent;
+      transition: background var(--trans);
+      user-select: none;
+    }
+    #resize-handle::after {
+      content: '';
+      position: absolute;
+      top: 0; bottom: 0;
+      left: 2px;
+      width: 1px;
+      background: var(--border);
+      transition: background var(--trans), width var(--trans), left var(--trans);
+    }
+    #resize-handle:hover::after,
+    #resize-handle.resizing::after {
+      left: 1px;
+      width: 3px;
+      background: var(--blue);
     }
 
     .tree-hdr {
@@ -496,9 +523,43 @@
     }
     .tn-btn-add:hover { background: #dff6dd; color: #107c10; border-color: #107c10; }
     .tn-btn-cpy:hover { background: #deedf9; color: #0078d4; border-color: #0078d4; }
-    .tn-btn-del:hover { background: #fde7e9; color: #a4262c; border-color: #a4262c; }
-    .tn-btn-mv:hover  { background: var(--surface-2); color: var(--text); border-color: var(--border-str); }
+    .tn-btn-del {
+      background-image: linear-gradient(to right, #a4262c 0%, #a4262c 100%);
+      background-size: 0% 100%;
+      background-repeat: no-repeat;
+      transition: background-size 0s, color var(--trans), border-color var(--trans);
+    }
+    .tn-btn-del:hover { color: #a4262c; border-color: #a4262c; }
+    .tn-btn-del.holding {
+      background-size: 100% 100%;
+      transition: background-size 0.9s linear, color 0s, border-color 0s;
+      color: #fff !important;
+      border-color: #a4262c !important;
+    }
     .tn-btn:disabled  { opacity: 0.25; cursor: default; pointer-events: none; }
+
+    /* ── Drag & Drop ─────────────────────────────────────────── */
+    .tn-drag-handle {
+      width: 14px; height: 18px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      color: var(--text-3);
+      opacity: 0;
+      cursor: grab;
+      transition: opacity var(--trans);
+    }
+    .tn:hover .tn-drag-handle { opacity: 0.7; }
+    .tn.dragging { opacity: 0.35; }
+    .tn.drop-before {
+      box-shadow: inset 0 2px 0 0 var(--blue);
+    }
+    .tn.drop-after {
+      box-shadow: inset 0 -2px 0 0 var(--blue);
+    }
+    .tn.drop-into {
+      background: var(--blue-ltr) !important;
+      box-shadow: inset 0 0 0 2px var(--blue);
+    }
 
     .tree-add-root {
       margin: 8px 8px 0;
@@ -966,6 +1027,9 @@
       /* ── Sidebar: full-height drawer, slides over everything ── */
       .sidebar-scrim { display: block; }
 
+      /* Resize handle ausblenden auf Mobile */
+      #resize-handle { display: none; }
+
       /* When sidebar is closed, it must NOT occupy any layout space */
       #tree-panel {
         position: fixed;
@@ -1075,6 +1139,16 @@
     <span class="tb-saved">{{ savedMsg }}</span>
 
     <div class="tb-actions" style="display:flex;align-items:center;gap:4px;">
+      <button class="btn btn-ghost" @click="undo" :disabled="undoStack.length === 0" title="Rückgängig (Ctrl+Z)"
+              style="opacity: 1;" :style="undoStack.length === 0 ? {opacity:'0.35',cursor:'default'} : {}">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 7.5A5 5 0 1 1 5.5 13"/><path d="M3 3.5v4h4"/>
+        </svg>
+        <span class="tb-label">Rückgängig</span>
+      </button>
+
+      <div class="tb-divider"></div>
+
       <button class="btn btn-ghost" @click="triggerImport" title="JSON laden">
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M2 4h4l2 2h6v8H2V4z"/><path d="M2 8h12"/>
@@ -1082,11 +1156,18 @@
         <span class="tb-label">Laden</span>
       </button>
 
-      <button class="btn btn-ghost" @click="exportJSON" title="Als JSON speichern">
+      <button class="btn btn-ghost" @click="saveJSON" title="Speichern (Ctrl+S)">
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <rect x="2" y="2" width="12" height="13" rx="1.5"/><path d="M5 2v4h6V2"/><path d="M11 3h-1"/><path d="M4 9h8M4 12h5"/>
         </svg>
         <span class="tb-label">Speichern</span>
+      </button>
+
+      <button class="btn btn-ghost" @click="saveJSONAs" title="Speichern unter…">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="2" width="12" height="13" rx="1.5"/><path d="M5 2v4h6V2"/><path d="M11 3h-1"/><path d="M4 9h5"/><path d="M11 11l2 2m0-2l-2 2"/>
+        </svg>
+        <span class="tb-label">Speichern unter</span>
       </button>
 
       <button class="btn btn-green" @click="exportExcel" title="Als Excel exportieren">
@@ -1131,7 +1212,7 @@
     <div class="leg-item"><div class="leg-dot" style="background:var(--lv3)"></div>Funktion</div>
     <div class="leg-item"><div class="leg-dot" style="background:var(--lv4)"></div>Zustand</div>
     <div class="leg-sep"></div>
-    <span class="leg-hint">Doppelklick = umbenennen &nbsp;·&nbsp; + = untergeordnet anlegen &nbsp;·&nbsp; × = löschen</span>
+    <span class="leg-hint">Doppelklick = umbenennen &nbsp;·&nbsp; + = untergeordnet anlegen &nbsp;·&nbsp; × = löschen &nbsp;·&nbsp; ⠿ = ziehen zum Verschieben</span>
   </div>
 
   <!-- ─────────────── MAIN ──────────────────────────────────── -->
@@ -1141,7 +1222,7 @@
     <div class="sidebar-scrim" :class="{visible: sidebarOpen}" @click="sidebarOpen=false"></div>
 
     <!-- ──────── TREE PANEL ──────────────────────────────── -->
-    <div id="tree-panel" :class="{open: sidebarOpen}">
+    <div id="tree-panel" :class="{open: sidebarOpen}" :style="sidebarOpen ? {} : {width: sidebarWidth + 'px'}">
       <div class="tree-hdr">
         <span>Projektstruktur</span>
         <div style="display:flex;align-items:center;gap:8px">
@@ -1155,8 +1236,18 @@
         </div>
 
         <template v-for="(s, si) in stationen" :key="s.id">
-          <div class="tn tn-l0" :class="{sel: isSel(si)}"
+          <div class="tn tn-l0"
+               :class="[{sel: isSel(si), dragging: isDragging('station',[si])}, dropClass('station',[si])]"
+               draggable="true"
+               @dragstart.stop="onDragStart($event,'station',[si])"
+               @dragover="onDragOver($event,'station',[si])"
+               @dragleave="onDragLeave($event)"
+               @drop="onDrop($event,'station',[si])"
+               @dragend="onDragEnd"
                @click="sel(si)" @dblclick.prevent="startEdit(s)">
+            <span class="tn-drag-handle" title="Verschieben">
+              <svg width="8" height="12" viewBox="0 0 8 12" fill="currentColor"><circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/><circle cx="2" cy="6" r="1.2"/><circle cx="6" cy="6" r="1.2"/><circle cx="2" cy="10" r="1.2"/><circle cx="6" cy="10" r="1.2"/></svg>
+            </span>
             <span class="tn-arr" @click.stop="togExp(s.id)">
               <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor">
                 <path v-if="isExp(s.id)" d="M0 2l4 4 4-4z"/><path v-else d="M2 0l4 4-4 4z"/>
@@ -1173,18 +1264,26 @@
                    @click.stop @dblclick.stop />
             <span v-else class="tn-lbl">{{ s.name }}</span>
             <div class="tn-acts">
-              <button class="tn-btn tn-btn-mv" @click.stop="moveStation(si,-1)" :disabled="si===0" title="Nach oben"><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M1 7l4-4 4 4z"/></svg></button>
-              <button class="tn-btn tn-btn-mv" @click.stop="moveStation(si,1)"  :disabled="si>=stationen.length-1" title="Nach unten"><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M1 3l4 4 4-4z"/></svg></button>
               <button class="tn-btn tn-btn-add" @click.stop="addBauraum(si)" title="Bauraum hinzufügen">+</button>
               <button class="tn-btn tn-btn-cpy" @click.stop="copyStation(si)" title="Station kopieren"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><path d="M8 4V2a1 1 0 00-1-1H2a1 1 0 00-1 1v5a1 1 0 001 1h2"/></svg></button>
-              <button class="tn-btn tn-btn-del" @click.stop="delStation(si)" title="Löschen">×</button>
+              <button class="tn-btn tn-btn-del" @mousedown.stop.prevent="startHold($event, () => delStation(si))" @mouseup.stop="cancelHold()" @mouseleave="cancelHold()" title="Gedrückt halten zum Löschen">×</button>
             </div>
           </div>
 
           <template v-if="isExp(s.id)">
             <template v-for="(b, bi) in s.bauräume" :key="b.id">
-              <div class="tn tn-l1" :class="{sel: isSel(si,bi)}"
+              <div class="tn tn-l1"
+                   :class="[{sel: isSel(si,bi), dragging: isDragging('bauraum',[si,bi])}, dropClass('bauraum',[si,bi])]"
+                   draggable="true"
+                   @dragstart.stop="onDragStart($event,'bauraum',[si,bi])"
+                   @dragover="onDragOver($event,'bauraum',[si,bi])"
+                   @dragleave="onDragLeave($event)"
+                   @drop="onDrop($event,'bauraum',[si,bi])"
+                   @dragend="onDragEnd"
                    @click="sel(si,bi)" @dblclick.prevent="startEdit(b)">
+                <span class="tn-drag-handle" title="Verschieben">
+                  <svg width="8" height="12" viewBox="0 0 8 12" fill="currentColor"><circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/><circle cx="2" cy="6" r="1.2"/><circle cx="6" cy="6" r="1.2"/><circle cx="2" cy="10" r="1.2"/><circle cx="6" cy="10" r="1.2"/></svg>
+                </span>
                 <span class="tn-arr" @click.stop="togExp(b.id)">
                   <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor">
                     <path v-if="isExp(b.id)" d="M0 2l4 4 4-4z"/><path v-else d="M2 0l4 4-4 4z"/>
@@ -1201,18 +1300,26 @@
                        @click.stop @dblclick.stop />
                 <span v-else class="tn-lbl">{{ b.name }}</span>
                 <div class="tn-acts">
-                  <button class="tn-btn tn-btn-mv" @click.stop="moveBauraum(si,bi,-1)" :disabled="bi===0" title="Nach oben"><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M1 7l4-4 4 4z"/></svg></button>
-                  <button class="tn-btn tn-btn-mv" @click.stop="moveBauraum(si,bi,1)"  :disabled="bi>=s.bauräume.length-1" title="Nach unten"><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M1 3l4 4 4-4z"/></svg></button>
                   <button class="tn-btn tn-btn-add" @click.stop="addFunkDef(si,bi)" title="Funktionsdefinition hinzufügen">+</button>
                   <button class="tn-btn tn-btn-cpy" @click.stop="copyBauraum(si,bi)" title="Bauraum kopieren"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><path d="M8 4V2a1 1 0 00-1-1H2a1 1 0 00-1 1v5a1 1 0 001 1h2"/></svg></button>
-                  <button class="tn-btn tn-btn-del" @click.stop="delBauraum(si,bi)" title="Löschen">×</button>
+                  <button class="tn-btn tn-btn-del" @mousedown.stop.prevent="startHold($event, () => delBauraum(si,bi))" @mouseup.stop="cancelHold()" @mouseleave="cancelHold()" title="Gedrückt halten zum Löschen">×</button>
                 </div>
               </div>
 
               <template v-if="isExp(b.id)">
                 <template v-for="(fd, fdi) in b.funktionsdefinitionen" :key="fd.id">
-                  <div class="tn tn-l2" :class="{sel: isSel(si,bi,fdi)}"
+                  <div class="tn tn-l2"
+                       :class="[{sel: isSel(si,bi,fdi), dragging: isDragging('funkdef',[si,bi,fdi])}, dropClass('funkdef',[si,bi,fdi])]"
+                       draggable="true"
+                       @dragstart.stop="onDragStart($event,'funkdef',[si,bi,fdi])"
+                       @dragover="onDragOver($event,'funkdef',[si,bi,fdi])"
+                       @dragleave="onDragLeave($event)"
+                       @drop="onDrop($event,'funkdef',[si,bi,fdi])"
+                       @dragend="onDragEnd"
                        @click="sel(si,bi,fdi)" @dblclick.prevent="startEdit(fd)">
+                    <span class="tn-drag-handle" title="Verschieben">
+                      <svg width="8" height="12" viewBox="0 0 8 12" fill="currentColor"><circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/><circle cx="2" cy="6" r="1.2"/><circle cx="6" cy="6" r="1.2"/><circle cx="2" cy="10" r="1.2"/><circle cx="6" cy="10" r="1.2"/></svg>
+                    </span>
                     <span class="tn-arr" @click.stop="togExp(fd.id)">
                       <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor">
                         <path v-if="isExp(fd.id)" d="M0 2l4 4 4-4z"/><path v-else d="M2 0l4 4-4 4z"/>
@@ -1229,18 +1336,26 @@
                            @click.stop @dblclick.stop />
                     <span v-else class="tn-lbl">{{ fd.name }}</span>
                     <div class="tn-acts">
-                      <button class="tn-btn tn-btn-mv" @click.stop="moveFunkDef(si,bi,fdi,-1)" :disabled="fdi===0" title="Nach oben"><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M1 7l4-4 4 4z"/></svg></button>
-                      <button class="tn-btn tn-btn-mv" @click.stop="moveFunkDef(si,bi,fdi,1)"  :disabled="fdi>=b.funktionsdefinitionen.length-1" title="Nach unten"><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M1 3l4 4 4-4z"/></svg></button>
                       <button class="tn-btn tn-btn-add" @click.stop="addFunktion(si,bi,fdi)" title="Funktion hinzufügen">+</button>
                       <button class="tn-btn tn-btn-cpy" @click.stop="copyFunkDef(si,bi,fdi)" title="Funktionsdefinition kopieren"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><path d="M8 4V2a1 1 0 00-1-1H2a1 1 0 00-1 1v5a1 1 0 001 1h2"/></svg></button>
-                      <button class="tn-btn tn-btn-del" @click.stop="delFunkDef(si,bi,fdi)" title="Löschen">×</button>
+                      <button class="tn-btn tn-btn-del" @mousedown.stop.prevent="startHold($event, () => delFunkDef(si,bi,fdi))" @mouseup.stop="cancelHold()" @mouseleave="cancelHold()" title="Gedrückt halten zum Löschen">×</button>
                     </div>
                   </div>
 
                   <template v-if="isExp(fd.id)">
                     <template v-for="(f, fi) in fd.funktionen" :key="f.id">
-                      <div class="tn tn-l3" :class="{sel: isSel(si,bi,fdi,fi)}"
+                      <div class="tn tn-l3"
+                           :class="[{sel: isSel(si,bi,fdi,fi), dragging: isDragging('funktion',[si,bi,fdi,fi])}, dropClass('funktion',[si,bi,fdi,fi])]"
+                           draggable="true"
+                           @dragstart.stop="onDragStart($event,'funktion',[si,bi,fdi,fi])"
+                           @dragover="onDragOver($event,'funktion',[si,bi,fdi,fi])"
+                           @dragleave="onDragLeave($event)"
+                           @drop="onDrop($event,'funktion',[si,bi,fdi,fi])"
+                           @dragend="onDragEnd"
                            @click="sel(si,bi,fdi,fi)" @dblclick.prevent="startEdit(f)">
+                        <span class="tn-drag-handle" title="Verschieben">
+                          <svg width="8" height="12" viewBox="0 0 8 12" fill="currentColor"><circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/><circle cx="2" cy="6" r="1.2"/><circle cx="6" cy="6" r="1.2"/><circle cx="2" cy="10" r="1.2"/><circle cx="6" cy="10" r="1.2"/></svg>
+                        </span>
                         <span class="tn-arr" @click.stop="togExp(f.id)">
                           <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor">
                             <path v-if="isExp(f.id)" d="M0 2l4 4 4-4z"/><path v-else d="M2 0l4 4-4 4z"/>
@@ -1258,18 +1373,26 @@
                                @click.stop @dblclick.stop />
                         <span v-else class="tn-lbl">{{ f.name }}</span>
                         <div class="tn-acts">
-                          <button class="tn-btn tn-btn-mv" @click.stop="moveFunktion(si,bi,fdi,fi,-1)" :disabled="fi===0" title="Nach oben"><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M1 7l4-4 4 4z"/></svg></button>
-                          <button class="tn-btn tn-btn-mv" @click.stop="moveFunktion(si,bi,fdi,fi,1)"  :disabled="fi>=fd.funktionen.length-1" title="Nach unten"><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M1 3l4 4 4-4z"/></svg></button>
                           <button class="tn-btn tn-btn-add" @click.stop="addZustand(si,bi,fdi,fi)" title="Zustand hinzufügen">+</button>
                           <button class="tn-btn tn-btn-cpy" @click.stop="copyFunktion(si,bi,fdi,fi)" title="Funktion kopieren"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><path d="M8 4V2a1 1 0 00-1-1H2a1 1 0 00-1 1v5a1 1 0 001 1h2"/></svg></button>
-                          <button class="tn-btn tn-btn-del" @click.stop="delFunktion(si,bi,fdi,fi)" title="Löschen">×</button>
+                          <button class="tn-btn tn-btn-del" @mousedown.stop.prevent="startHold($event, () => delFunktion(si,bi,fdi,fi))" @mouseup.stop="cancelHold()" @mouseleave="cancelHold()" title="Gedrückt halten zum Löschen">×</button>
                         </div>
                       </div>
 
                       <template v-if="isExp(f.id)">
                         <div v-for="(z, zi) in f.zustände" :key="z.id"
-                             class="tn tn-l4" :class="{sel: isSel(si,bi,fdi,fi,zi)}"
+                             class="tn tn-l4"
+                             :class="[{sel: isSel(si,bi,fdi,fi,zi), dragging: isDragging('zustand',[si,bi,fdi,fi,zi])}, dropClass('zustand',[si,bi,fdi,fi,zi])]"
+                             draggable="true"
+                             @dragstart.stop="onDragStart($event,'zustand',[si,bi,fdi,fi,zi])"
+                             @dragover="onDragOver($event,'zustand',[si,bi,fdi,fi,zi])"
+                             @dragleave="onDragLeave($event)"
+                             @drop="onDrop($event,'zustand',[si,bi,fdi,fi,zi])"
+                             @dragend="onDragEnd"
                              @click="sel(si,bi,fdi,fi,zi)" @dblclick.prevent="startEdit(z)">
+                          <span class="tn-drag-handle" title="Verschieben">
+                            <svg width="8" height="12" viewBox="0 0 8 12" fill="currentColor"><circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/><circle cx="2" cy="6" r="1.2"/><circle cx="6" cy="6" r="1.2"/><circle cx="2" cy="10" r="1.2"/><circle cx="6" cy="10" r="1.2"/></svg>
+                          </span>
                           <span class="tn-arr ph"></span>
                           <span class="tn-chip">Z</span>
                           <span class="tn-ico">
@@ -1283,10 +1406,8 @@
                                  @click.stop @dblclick.stop />
                           <span v-else class="tn-lbl">{{ z.name }}</span>
                           <div class="tn-acts">
-                            <button class="tn-btn tn-btn-mv" @click.stop="moveZustand(si,bi,fdi,fi,zi,-1)" :disabled="zi===0" title="Nach oben"><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M1 7l4-4 4 4z"/></svg></button>
-                            <button class="tn-btn tn-btn-mv" @click.stop="moveZustand(si,bi,fdi,fi,zi,1)"  :disabled="zi>=f.zustände.length-1" title="Nach unten"><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M1 3l4 4 4-4z"/></svg></button>
                             <button class="tn-btn tn-btn-cpy" @click.stop="copyZustand(si,bi,fdi,fi,zi)" title="Zustand kopieren"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><path d="M8 4V2a1 1 0 00-1-1H2a1 1 0 00-1 1v5a1 1 0 001 1h2"/></svg></button>
-                            <button class="tn-btn tn-btn-del" @click.stop="delZustand(si,bi,fdi,fi,zi)" title="Löschen">×</button>
+                            <button class="tn-btn tn-btn-del" @mousedown.stop.prevent="startHold($event, () => delZustand(si,bi,fdi,fi,zi))" @mouseup.stop="cancelHold()" @mouseleave="cancelHold()" title="Gedrückt halten zum Löschen">×</button>
                           </div>
                         </div>
                       </template>
@@ -1310,11 +1431,17 @@
             </svg>
             Laden
           </button>
-          <button class="sf-btn" @click="exportJSON; sidebarOpen=false">
+          <button class="sf-btn" @click="saveJSON(); sidebarOpen=false">
             <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <rect x="2" y="2" width="12" height="13" rx="1.5"/><path d="M5 2v4h6V2"/><path d="M4 9h8M4 12h5"/>
             </svg>
             Speichern
+          </button>
+          <button class="sf-btn" @click="saveJSONAs(); sidebarOpen=false">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="2" width="12" height="13" rx="1.5"/><path d="M5 2v4h6V2"/><path d="M4 9h5"/><path d="M11 11l2 2m0-2l-2 2"/>
+            </svg>
+            Speichern unter
           </button>
           <button class="sf-btn sf-btn-green" @click="exportExcel; sidebarOpen=false">
             <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -1344,6 +1471,11 @@
       </div>
 
     </div><!-- tree-panel -->
+
+    <!-- ──────── RESIZE HANDLE ───────────────────────────── -->
+    <div id="resize-handle"
+         :class="{resizing: isResizing}"
+         @mousedown.prevent="startResize($event)"></div>
 
     <!-- ──────── DETAIL PANEL ────────────────────────────── -->
     <div id="detail-panel">
@@ -1751,8 +1883,31 @@ const EA_FIELDS = [
 ];
 
 const STORAGE_KEY = 'uebergabe_v1';
-const VERSION = '1.0.0';
+const VERSION = '1.2.0';
 const CHANGELOG = [
+  {
+    version: '1.2.0',
+    datum: '26.03.2026',
+    änderungen: [
+      'Speichern & Speichern unter: Dateien direkt überschreiben oder unter neuem Namen ablegen (File System Access API)',
+      'Laden merkt sich das File-Handle – Speichern schreibt direkt zurück in die geöffnete Datei',
+      'Rückgängig-Funktion (Ctrl+Z): Letzte Änderung widerrufen – bis zu 50 Schritte',
+      'Gedrückt-Halten zum Löschen: Lösch-Button 0,9 s halten statt versehentlichem Klick',
+      'Sidebar-Breite per Maus anpassbar (Resize-Handle zwischen Baum und Detail)',
+      'Verschiebe-Pfeile entfernt – Drag & Drop ersetzt die bisherige Navigation',
+      'Tastenkürzel: Ctrl+S zum Speichern, Ctrl+Z zum Rückgängig machen',
+    ],
+  },
+  {
+    version: '1.1.0',
+    datum: '26.03.2026',
+    änderungen: [
+      'Drag & Drop im Baum: Elemente per Ziehen umsortieren',
+      'Strukturübergreifendes Verschieben: z.B. Bauraum in andere Station ziehen',
+      'Drag-Handle (Greif-Icon) erscheint beim Hovern auf Baumelementen',
+      'Visuelle Drop-Indikatoren (Linie vor/nach, Farbhervorhebung beim Einordnen)',
+    ],
+  },
   {
     version: '1.0.0',
     datum: '17.03.2026',
@@ -1782,6 +1937,11 @@ createApp({
       showSettings: false,
       showChangelog: false,
       sidebarOpen: false,
+      drag: { type: null, path: null },
+      drop: { type: null, path: null, pos: null },
+      undoStack: [],
+      sidebarWidth: 340,
+      isResizing: false,
       newPreset: { funktionsNamen: '', zustandsNamen: '', stellglieder: '' },
       einstellungen: {
         funktionsNamen: ['Z-Ausgleich','XYZ-Handling','Hub','Drehen','Schieber','Greifer','Verriegelung','Entriegelung'],
@@ -1843,7 +2003,7 @@ createApp({
         if (inp) { inp.focus(); inp.select(); }
       });
     },
-    saveEdit(node)  { if (this.editVal.trim()) node.name = this.editVal.trim(); this.editId = null; },
+    saveEdit(node)  { if (this.editVal.trim() && node.name !== this.editVal.trim()) this.pushUndo(); if (this.editVal.trim()) node.name = this.editVal.trim(); this.editId = null; },
     cancelEdit()    { this.editId = null; },
 
     deepClone(node) {
@@ -1856,6 +2016,7 @@ createApp({
     },
 
     copyStation(si) {
+      this.pushUndo();
       const clone = this.deepClone(this.stationen[si]);
       clone.name += ' (Kopie)';
       this.stationen.splice(si + 1, 0, clone);
@@ -1863,6 +2024,7 @@ createApp({
       this.$nextTick(() => this.startEdit(clone));
     },
     copyBauraum(si, bi) {
+      this.pushUndo();
       const clone = this.deepClone(this.stationen[si].bauräume[bi]);
       clone.name += ' (Kopie)';
       this.stationen[si].bauräume.splice(bi + 1, 0, clone);
@@ -1871,6 +2033,7 @@ createApp({
       this.$nextTick(() => this.startEdit(clone));
     },
     copyFunkDef(si, bi, fdi) {
+      this.pushUndo();
       const clone = this.deepClone(this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi]);
       clone.name += ' (Kopie)';
       this.stationen[si].bauräume[bi].funktionsdefinitionen.splice(fdi + 1, 0, clone);
@@ -1879,6 +2042,7 @@ createApp({
       this.$nextTick(() => this.startEdit(clone));
     },
     copyFunktion(si, bi, fdi, fi) {
+      this.pushUndo();
       const clone = this.deepClone(this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi].funktionen[fi]);
       clone.name += ' (Kopie)';
       this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi].funktionen.splice(fi + 1, 0, clone);
@@ -1888,6 +2052,7 @@ createApp({
       this.$nextTick(() => this.startEdit(clone));
     },
     copyZustand(si, bi, fdi, fi, zi) {
+      this.pushUndo();
       const clone = this.deepClone(this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi].funktionen[fi].zustände[zi]);
       clone.name += ' (Kopie)';
       this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi].funktionen[fi].zustände.splice(zi + 1, 0, clone);
@@ -1927,7 +2092,171 @@ createApp({
         this.path = [si, bi, fdi, fi, ni];
     },
 
+    /* ── Undo ────────────────────────────────────────────────── */
+    pushUndo() {
+      this.undoStack.push(JSON.parse(JSON.stringify({
+        projektname: this.projektname,
+        stationen: this.stationen,
+      })));
+      if (this.undoStack.length > 50) this.undoStack.shift();
+    },
+    undo() {
+      if (!this.undoStack.length) return;
+      const snap = this.undoStack.pop();
+      this.projektname = snap.projektname;
+      this.stationen   = snap.stationen;
+      this.path        = null;
+    },
+
+    /* ── Hold-to-Delete ─────────────────────────────────────── */
+    startHold(e, callback) {
+      this._holdBtn = e.currentTarget;
+      this._holdBtn.classList.add('holding');
+      this._holdTimer = setTimeout(() => {
+        this._holdBtn?.classList.remove('holding');
+        this._holdBtn = null;
+        this._holdTimer = null;
+        callback();
+      }, 900);
+    },
+    cancelHold() {
+      if (!this._holdTimer) return;
+      clearTimeout(this._holdTimer);
+      this._holdTimer = null;
+      this._holdBtn?.classList.remove('holding');
+      this._holdBtn = null;
+    },
+
+    /* ── Sidebar Resize ──────────────────────────────────────── */
+    startResize(e) {
+      this.isResizing = true;
+      this._resizeStartX = e.clientX;
+      this._resizeStartW = this.sidebarWidth;
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    },
+    doResize(e) {
+      if (!this.isResizing) return;
+      const delta = e.clientX - this._resizeStartX;
+      this.sidebarWidth = Math.min(600, Math.max(180, this._resizeStartW + delta));
+    },
+    stopResize() {
+      if (!this.isResizing) return;
+      this.isResizing = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      localStorage.setItem('uebergabe_sidebar_w', this.sidebarWidth);
+    },
+
+    /* ── Drag & Drop ─────────────────────────────────────────── */
+    isDragging(type, path) {
+      return this.drag.type === type &&
+        this.drag.path?.length === path.length &&
+        path.every((v, i) => v === this.drag.path[i]);
+    },
+    dropClass(type, path) {
+      if (!this.drop.pos || this.drop.type !== type) return {};
+      if (!this.drop.path || this.drop.path.length !== path.length) return {};
+      if (!path.every((v, i) => v === this.drop.path[i])) return {};
+      return { ['drop-' + this.drop.pos]: true };
+    },
+
+    onDragStart(e, type, path) {
+      this.drag = { type, path: [...path] };
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', type);
+    },
+    onDragOver(e, type, path) {
+      if (!this.drag.type) return;
+      const pos = this.calcDropPos(e, type, path);
+      if (!pos) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      this.drop = { type, path: [...path], pos };
+    },
+    onDragLeave(e) {
+      // no-op: onDragOver and onDragEnd manage state
+    },
+    onDrop(e, type, path) {
+      e.preventDefault();
+      e.stopPropagation();
+      const pos = this.calcDropPos(e, type, path);
+      if (pos) this.drop = { type, path: [...path], pos };
+      if (!this.drop.pos) return;
+      this.executeDrop();
+      this.drag = { type: null, path: null };
+      this.drop = { type: null, path: null, pos: null };
+    },
+    onDragEnd() {
+      this.drag = { type: null, path: null };
+      this.drop = { type: null, path: null, pos: null };
+    },
+
+    calcDropPos(e, targetType, targetPath) {
+      const { type: dragType, path: dragPath } = this.drag;
+      if (!dragType) return null;
+      // Prevent drop on self
+      if (dragType === targetType &&
+          dragPath.length === targetPath.length &&
+          dragPath.every((v, i) => v === targetPath[i])) return null;
+      // Same type: before/after based on mouse Y
+      if (dragType === targetType) {
+        const rect = e.currentTarget.getBoundingClientRect();
+        return e.clientY < rect.top + rect.height / 2 ? 'before' : 'after';
+      }
+      // Cross-type: drop into valid parent
+      if (dragType === 'bauraum'  && targetType === 'station')  return 'into';
+      if (dragType === 'funkdef'  && targetType === 'bauraum')  return 'into';
+      if (dragType === 'funktion' && targetType === 'funkdef')  return 'into';
+      if (dragType === 'zustand'  && targetType === 'funktion') return 'into';
+      return null;
+    },
+
+    executeDrop() {
+      this.pushUndo();
+      const { type: dragType, path: dragPath } = this.drag;
+      const { type: dropType, path: dropPath, pos } = this.drop;
+      // Resolve source array + index
+      let srcArr, srcIdx;
+      switch (dragType) {
+        case 'station':  srcArr = this.stationen; srcIdx = dragPath[0]; break;
+        case 'bauraum':  srcArr = this.stationen[dragPath[0]].bauräume; srcIdx = dragPath[1]; break;
+        case 'funkdef':  srcArr = this.stationen[dragPath[0]].bauräume[dragPath[1]].funktionsdefinitionen; srcIdx = dragPath[2]; break;
+        case 'funktion': srcArr = this.stationen[dragPath[0]].bauräume[dragPath[1]].funktionsdefinitionen[dragPath[2]].funktionen; srcIdx = dragPath[3]; break;
+        case 'zustand':  srcArr = this.stationen[dragPath[0]].bauräume[dragPath[1]].funktionsdefinitionen[dragPath[2]].funktionen[dragPath[3]].zustände; srcIdx = dragPath[4]; break;
+        default: return;
+      }
+      // Resolve destination array + insert index
+      let dstArr, dstIdx;
+      if (pos === 'into') {
+        switch (dropType) {
+          case 'station':  dstArr = this.stationen[dropPath[0]].bauräume; break;
+          case 'bauraum':  dstArr = this.stationen[dropPath[0]].bauräume[dropPath[1]].funktionsdefinitionen; break;
+          case 'funkdef':  dstArr = this.stationen[dropPath[0]].bauräume[dropPath[1]].funktionsdefinitionen[dropPath[2]].funktionen; break;
+          case 'funktion': dstArr = this.stationen[dropPath[0]].bauräume[dropPath[1]].funktionsdefinitionen[dropPath[2]].funktionen[dropPath[3]].zustände; break;
+          default: return;
+        }
+        dstIdx = dstArr.length;
+      } else {
+        switch (dropType) {
+          case 'station':  dstArr = this.stationen; dstIdx = dropPath[0]; break;
+          case 'bauraum':  dstArr = this.stationen[dropPath[0]].bauräume; dstIdx = dropPath[1]; break;
+          case 'funkdef':  dstArr = this.stationen[dropPath[0]].bauräume[dropPath[1]].funktionsdefinitionen; dstIdx = dropPath[2]; break;
+          case 'funktion': dstArr = this.stationen[dropPath[0]].bauräume[dropPath[1]].funktionsdefinitionen[dropPath[2]].funktionen; dstIdx = dropPath[3]; break;
+          case 'zustand':  dstArr = this.stationen[dropPath[0]].bauräume[dropPath[1]].funktionsdefinitionen[dropPath[2]].funktionen[dropPath[3]].zustände; dstIdx = dropPath[4]; break;
+          default: return;
+        }
+        if (pos === 'after') dstIdx++;
+      }
+      const item = srcArr[srcIdx];
+      srcArr.splice(srcIdx, 1);
+      if (srcArr === dstArr && srcIdx < dstIdx) dstIdx--;
+      dstArr.splice(Math.max(0, dstIdx), 0, item);
+      this.path = null;
+    },
+
     addStation() {
+      this.pushUndo();
       const s = mkStation();
       this.stationen.push(s);
       this.expanded[s.id] = true;
@@ -1935,6 +2264,7 @@ createApp({
       this.$nextTick(() => this.startEdit(s));
     },
     addBauraum(si) {
+      this.pushUndo();
       const b = mkBauraum();
       this.stationen[si].bauräume.push(b);
       this.expandPath([this.stationen[si].id, b.id]);
@@ -1942,6 +2272,7 @@ createApp({
       this.$nextTick(() => this.startEdit(b));
     },
     addFunkDef(si, bi) {
+      this.pushUndo();
       const fd = mkFunkDef();
       this.stationen[si].bauräume[bi].funktionsdefinitionen.push(fd);
       this.expandPath([this.stationen[si].id, this.stationen[si].bauräume[bi].id, fd.id]);
@@ -1949,6 +2280,7 @@ createApp({
       this.$nextTick(() => this.startEdit(fd));
     },
     addFunktion(si, bi, fdi) {
+      this.pushUndo();
       const f = mkFunktion();
       this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi].funktionen.push(f);
       this.expandPath([this.stationen[si].id, this.stationen[si].bauräume[bi].id,
@@ -1957,6 +2289,7 @@ createApp({
       this.$nextTick(() => this.startEdit(f));
     },
     addZustand(si, bi, fdi, fi) {
+      this.pushUndo();
       const z = mkZustand();
       this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi].funktionen[fi].zustände.push(z);
       this.expandPath([this.stationen[si].id, this.stationen[si].bauräume[bi].id,
@@ -1968,27 +2301,27 @@ createApp({
     },
 
     delStation(si) {
-      if (!confirm(`Station "${this.stationen[si].name}" wirklich löschen?\n(Alle untergeordneten Elemente werden ebenfalls gelöscht.)`)) return;
+      this.pushUndo();
       this.stationen.splice(si, 1);
       if (this.path?.[0] === si) this.path = null;
     },
     delBauraum(si, bi) {
-      if (!confirm(`Bauraum "${this.stationen[si].bauräume[bi].name}" wirklich löschen?`)) return;
+      this.pushUndo();
       this.stationen[si].bauräume.splice(bi, 1);
       if (this.path?.[0] === si && this.path?.[1] === bi) this.path = null;
     },
     delFunkDef(si, bi, fdi) {
-      if (!confirm(`Funktionsdefinition "${this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi].name}" wirklich löschen?`)) return;
+      this.pushUndo();
       this.stationen[si].bauräume[bi].funktionsdefinitionen.splice(fdi, 1);
       if (this.path?.[0]===si && this.path?.[1]===bi && this.path?.[2]===fdi) this.path = null;
     },
     delFunktion(si, bi, fdi, fi) {
-      if (!confirm(`Funktion "${this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi].funktionen[fi].name}" wirklich löschen?`)) return;
+      this.pushUndo();
       this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi].funktionen.splice(fi, 1);
       if (this.path?.length >= 4 && this.path[0]===si && this.path[1]===bi && this.path[2]===fdi && this.path[3]===fi) this.path = null;
     },
     delZustand(si, bi, fdi, fi, zi) {
-      if (!confirm(`Zustand "${this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi].funktionen[fi].zustände[zi].name}" wirklich löschen?`)) return;
+      this.pushUndo();
       this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi].funktionen[fi].zustände.splice(zi, 1);
       if (this.path?.length === 5 && this.path[4] === zi) this.path = null;
     },
@@ -2020,11 +2353,44 @@ createApp({
       } catch(e) {}
     },
 
-    exportJSON() {
-      const blob = new Blob([JSON.stringify({ projektname: this.projektname, stationen: this.stationen }, null, 2)],
-                            { type: 'application/json' });
-      this._dl(blob, `${this.projektname}.json`);
+    _buildJSONBlob() {
+      return new Blob([JSON.stringify({ projektname: this.projektname, stationen: this.stationen }, null, 2)],
+                      { type: 'application/json' });
     },
+    async saveJSON() {
+      if (this._fileHandle) {
+        try {
+          const writable = await this._fileHandle.createWritable();
+          await writable.write(this._buildJSONBlob());
+          await writable.close();
+          this.savedMsg = '✓ Gespeichert';
+          clearTimeout(this._saveTimer);
+          this._saveTimer = setTimeout(() => { this.savedMsg = ''; }, 2500);
+          return;
+        } catch(e) { /* Handle ungültig → Fallback auf Speichern unter */ }
+      }
+      await this.saveJSONAs();
+    },
+    async saveJSONAs() {
+      if (window.showSaveFilePicker) {
+        try {
+          this._fileHandle = await window.showSaveFilePicker({
+            suggestedName: `${this.projektname}.json`,
+            types: [{ description: 'JSON-Datei', accept: { 'application/json': ['.json'] } }],
+          });
+          const writable = await this._fileHandle.createWritable();
+          await writable.write(this._buildJSONBlob());
+          await writable.close();
+          this.savedMsg = '✓ Gespeichert';
+          clearTimeout(this._saveTimer);
+          this._saveTimer = setTimeout(() => { this.savedMsg = ''; }, 2500);
+          return;
+        } catch(e) { if (e.name === 'AbortError') return; }
+      }
+      // Fallback: klassischer Download
+      this._dl(this._buildJSONBlob(), `${this.projektname}.json`);
+    },
+    exportJSON() { this.saveJSONAs(); },
     neuesDokument() {
       const ok = window.confirm(
         '⚠️ Neues Dokument anlegen?\n\n' +
@@ -2037,8 +2403,36 @@ createApp({
       this.path        = null;
       this.expanded    = {};
       this.editId      = null;
+      this._fileHandle = null;
     },
-    triggerImport() { this.$refs.fileInput.click(); },
+    async triggerImport() {
+      if (window.showOpenFilePicker) {
+        try {
+          const [handle] = await window.showOpenFilePicker({
+            types: [{ description: 'JSON-Datei', accept: { 'application/json': ['.json'] } }],
+            multiple: false,
+          });
+          const file = await handle.getFile();
+          const text = await file.text();
+          const d = JSON.parse(text);
+          this.projektname = d.projektname || 'Übergabeprotokoll';
+          this.stationen   = d.stationen   || [];
+          if (d.einstellungen) {
+            if (d.einstellungen.funktionsNamen) this.einstellungen.funktionsNamen = d.einstellungen.funktionsNamen;
+            if (d.einstellungen.zustandsNamen)  this.einstellungen.zustandsNamen  = d.einstellungen.zustandsNamen;
+            if (d.einstellungen.stellglieder)   this.einstellungen.stellglieder   = d.einstellungen.stellglieder;
+          }
+          this.path = null;
+          this._fileHandle = handle;
+          this.savedMsg = '✓ Datei geladen';
+          clearTimeout(this._saveTimer);
+          this._saveTimer = setTimeout(() => { this.savedMsg = ''; }, 2500);
+          return;
+        } catch(e) { if (e.name === 'AbortError') return; }
+      }
+      // Fallback: klassischer File-Input
+      this.$refs.fileInput.click();
+    },
     onFileLoad(ev) {
       const file = ev.target.files[0];
       if (!file) return;
@@ -2054,6 +2448,7 @@ createApp({
             if (d.einstellungen.stellglieder)   this.einstellungen.stellglieder   = d.einstellungen.stellglieder;
           }
           this.path = null;
+          this._fileHandle = null;
           alert('✓ Datei erfolgreich geladen!');
         } catch(err) { alert('Fehler beim Laden: ' + err.message); }
       };
@@ -2351,6 +2746,24 @@ createApp({
     this.loadLS();
     const seenVersion = localStorage.getItem('uebergabe_seen_version');
     if (seenVersion !== VERSION) this.showChangelog = true;
+    // Restore saved sidebar width
+    const savedW = localStorage.getItem('uebergabe_sidebar_w');
+    if (savedW) this.sidebarWidth = Math.min(600, Math.max(180, parseInt(savedW)));
+    // Global mouse handlers for resize
+    this._onMouseMove = (e) => this.doResize(e);
+    this._onMouseUp   = ()  => { this.stopResize(); this.cancelHold(); };
+    this._onKeyDown   = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); this.undo(); }
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); this.saveJSON(); }
+    };
+    window.addEventListener('mousemove', this._onMouseMove);
+    window.addEventListener('mouseup',   this._onMouseUp);
+    window.addEventListener('keydown',   this._onKeyDown);
+  },
+  unmounted() {
+    window.removeEventListener('mousemove', this._onMouseMove);
+    window.removeEventListener('mouseup',   this._onMouseUp);
+    window.removeEventListener('keydown',   this._onKeyDown);
   },
 
 }).mount('#app');
