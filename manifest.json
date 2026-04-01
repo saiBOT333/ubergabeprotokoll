@@ -2,7 +2,7 @@
   "name": "Übergabeprotokoll – E-Konstruktion",
   "short_name": "Übergabe",
   "description": "Industrielle Dokumentation für Maschinen- und Stationskonfigurationen mit E/A-Zuordnung und Exportfunktionen.",
-  "start_url": "./ubergabeprotokoll.html",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",

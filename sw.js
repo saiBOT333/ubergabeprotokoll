@@ -3,9 +3,9 @@
    Strategy: Cache-first for app shell, network-first for CDN libs
 ═══════════════════════════════════════════════════════════════ */
 
-const CACHE  = 'uebergabe-v3';
+const CACHE  = 'uebergabe-v5';
 const STATIC = [
-  './ubergabeprotokoll.html',
+  './index.html',
   './icon.svg',
   './manifest.json',
 ];
