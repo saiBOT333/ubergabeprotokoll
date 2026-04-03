@@ -1430,11 +1430,16 @@
       outline: none; flex-shrink: 0;
     }
     .bmk-kz-input::placeholder { color: var(--blue-mid, #7ab3e0); font-weight: 400; }
-    .bmk-kz-input.kz-locked {
-      opacity: 0.55;
-      cursor: default;
+    .bmk-kz-input.kz-locked,
+    .bmk-kz-input:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
       background: var(--border-lt, #e9ecef);
-      color: var(--text-muted, #6c757d);
+      color: var(--text-3, #9e9c9a);
+    }
+    .bmk-kz-input:not(:disabled):not(.kz-locked) {
+      background: var(--blue-lt, #e8f0fe);
+      color: var(--blue, #0078d4);
     }
     .bmk-bez-input {
       flex: 1; border: none !important;
@@ -1583,6 +1588,18 @@
     .katalog-add-lt:focus {
       outline: none; border-color: var(--blue);
       box-shadow: 0 0 0 3px var(--blue-ltr);
+    }
+    .kz-dup-error {
+      border-color: var(--red, #c0392b) !important;
+      box-shadow: 0 0 0 3px rgba(192,57,43,.15) !important;
+    }
+    .katalog-kz-error-msg {
+      font-size: 11.5px; color: var(--red, #c0392b);
+      padding: 4px 6px 2px; margin-top: -2px;
+    }
+    .kz-field-error {
+      font-size: 11.5px; color: var(--red, #c0392b);
+      padding: 3px 2px 0; margin-top: 2px;
     }
     .katalog-import-row {
       display: flex; gap: 8px; margin-top: 12px;
@@ -2415,9 +2432,14 @@
             <div class="card-title">Allgemein</div>
             <div class="fg">
               <label class="flbl">Stationsname</label>
-              <bmk-combo v-model="curStation.name" v-model:kuerzel="curStation.kuerzel"
+              <bmk-combo v-model="curStation.name"
+                         :kuerzel="curStation.kuerzel"
+                         @update:kuerzel="setStructureKuerzel('station', curStation, $event)"
+                         @update:model-value="structureKzError = null"
+                         @kz-input="structureKzError = null"
                          :items="bmkKatalog.station" placeholder="z.B. Laserstation, Schweißstation…"
-                         level="station" @non-catalog-entry="onNonCatalogEntry" />
+                         level="station" @non-catalog-entry="onNonCatalogEntry"></bmk-combo>
+              <div v-if="structureKzError && structureKzError.level === 'station'" class="kz-field-error">{{ structureKzError.message }}</div>
             </div>
           </div>
           <div class="card">
@@ -2487,9 +2509,14 @@
             <div class="card-title">Allgemein</div>
             <div class="fg">
               <label class="flbl">Bauraum-Name</label>
-              <bmk-combo v-model="curBauraum.name" v-model:kuerzel="curBauraum.kuerzel"
+              <bmk-combo v-model="curBauraum.name"
+                         :kuerzel="curBauraum.kuerzel"
+                         @update:kuerzel="setStructureKuerzel('bauraum', curBauraum, $event)"
+                         @update:model-value="structureKzError = null"
+                         @kz-input="structureKzError = null"
                          :items="bmkKatalog.bauraum" placeholder="z.B. Handling, Arbeitsstellung…"
-                         level="bauraum" @non-catalog-entry="onNonCatalogEntry" />
+                         level="bauraum" @non-catalog-entry="onNonCatalogEntry"></bmk-combo>
+              <div v-if="structureKzError && structureKzError.level === 'bauraum'" class="kz-field-error">{{ structureKzError.message }}</div>
             </div>
           </div>
           <div class="card">
@@ -2563,9 +2590,14 @@
             <div class="card-title">Allgemein</div>
             <div class="fg">
               <label class="flbl">Bezeichnung</label>
-              <bmk-combo v-model="curFunkDef.name" v-model:kuerzel="curFunkDef.kuerzel"
+              <bmk-combo v-model="curFunkDef.name"
+                         :kuerzel="curFunkDef.kuerzel"
+                         @update:kuerzel="setStructureKuerzel('funktionsdefinition', curFunkDef, $event)"
+                         @update:model-value="structureKzError = null"
+                         @kz-input="structureKzError = null"
                          :items="bmkKatalog.funktionsdefinition" placeholder="z.B. Fertigteil, Rohteil, Bauteil…"
-                         level="funktionsdefinition" @non-catalog-entry="onNonCatalogEntry" />
+                         level="funktionsdefinition" @non-catalog-entry="onNonCatalogEntry"></bmk-combo>
+              <div v-if="structureKzError && structureKzError.level === 'funktionsdefinition'" class="kz-field-error">{{ structureKzError.message }}</div>
             </div>
           </div>
           <div class="card">
@@ -2641,9 +2673,14 @@
             <div class="card-title">Allgemein</div>
             <div class="fg">
               <label class="flbl">Bezeichnung</label>
-              <bmk-combo v-model="curFunktion.name" v-model:kuerzel="curFunktion.kuerzel"
+              <bmk-combo v-model="curFunktion.name"
+                         :kuerzel="curFunktion.kuerzel"
+                         @update:kuerzel="setStructureKuerzel('funktion', curFunktion, $event)"
+                         @update:model-value="structureKzError = null"
+                         @kz-input="structureKzError = null"
                          :items="bmkKatalog.funktion" placeholder="z.B. Greifen, Absperren, Handling…"
-                         level="funktion" @non-catalog-entry="onNonCatalogEntry" />
+                         level="funktion" @non-catalog-entry="onNonCatalogEntry"></bmk-combo>
+              <div v-if="structureKzError && structureKzError.level === 'funktion'" class="kz-field-error">{{ structureKzError.message }}</div>
             </div>
           </div>
           <div class="card">
@@ -2728,18 +2765,18 @@
             <div class="card-title">Zustand</div>
             <div class="fg">
               <label class="flbl">Zustandsname</label>
-              <bmk-combo v-model="curZustand.name" v-model:kuerzel="curZustand.kuerzel"
+              <bmk-combo v-model="curZustand.name"
                          :items="bmkKatalog.zustand" placeholder="z.B. Arbeitsstellung, Grundstellung…"
-                         level="zustand" @non-catalog-entry="onNonCatalogEntry" />
+                         :show-kuerzel="false"></bmk-combo>
             </div>
           </div>
           <div class="card">
             <div class="card-title">Stellglied</div>
             <div class="fg">
               <label class="flbl">Stellglied-Bezeichnung</label>
-              <bmk-combo v-model="curZustand.stellglied" v-model:kuerzel="curZustand.stellgliedKuerzel"
+              <bmk-combo v-model="curZustand.stellglied"
                          :items="bmkKatalog.stellglied" placeholder="z.B. 5/2-Wegeventil, Magnetventil…"
-                         level="stellglied" @non-catalog-entry="onNonCatalogEntry" />
+                         :show-kuerzel="false"></bmk-combo>
             </div>
           </div>
           <div class="card">
@@ -2799,15 +2836,15 @@
       <!-- Body -->
       <div class="katalog-drawer-body">
         <!-- Meta-Info -->
-        <div class="katalog-meta" v-if="katalogMeta.dateiname || katalogMeta.hash">
+        <div class="katalog-meta" v-if="katalogMeta.dateiname || katalogMeta.version">
           <span v-if="katalogMeta.dateiname">Quelle: <strong>{{ katalogMeta.dateiname }}</strong></span>
           <span v-if="katalogMeta.importDatum"> · {{ new Date(katalogMeta.importDatum).toLocaleDateString('de-DE') }}</span>
-          <span v-if="katalogMeta.hash"> · <code>{{ katalogMeta.hash }}</code></span>
+          <span v-if="katalogMeta.version"> · Version <code>{{ katalogMeta.version }}</code></span>
           <span v-if="katalogMeta.manuellGeändert" class="katalog-meta-changed"> · bearbeitet</span>
         </div>
 
         <div class="modal-hint">
-          Kürzel und Langtexte für alle Dropdown-Felder. Import aus <strong>.xlsx</strong> oder <strong>.json</strong>, oder manuelle Pflege.
+          Kürzel und Langtexte für alle Dropdown-Felder. Import aus <strong>.xlsx</strong> oder <strong>.json</strong>; Export als <strong>.xlsx</strong> mit automatischer Versionierung.
         </div>
 
         <div class="katalog-import-row">
@@ -2839,13 +2876,21 @@
             <div v-show="katalogFilter ? sortedFilteredKatalog[levelKey].length > 0 : katalogOpenLevel === levelKey">
               <!-- Tabelle -->
               <table class="katalog-table">
-                <colgroup><col class="katalog-col-kz"><col class="katalog-col-lt"><col class="katalog-col-act"></colgroup>
+                <colgroup>
+                  <col v-if="!['zustand','stellglied'].includes(levelKey)" class="katalog-col-kz">
+                  <col class="katalog-col-lt">
+                  <col class="katalog-col-act">
+                </colgroup>
                 <template v-for="(entry, i) in sortedFilteredKatalog[levelKey]" :key="entry.kuerzel + i">
                   <!-- Inline-Edit -->
                   <tr v-if="katalogEditKey && katalogEditKey.level === levelKey && katalogEditKey.idx === katalogRealIdx(levelKey, entry)"
                       class="katalog-edit-tr">
-                    <td><input class="katalog-add-kz" v-model="katalogEditVal.kuerzel" maxlength="6"
-                               @keyup.enter="saveKatalogEdit()" @keyup.escape="katalogEditKey=null" /></td>
+                    <td v-if="!['zustand','stellglied'].includes(levelKey)">
+                      <input class="katalog-add-kz" v-model="katalogEditVal.kuerzel" maxlength="3"
+                             :class="{ 'kz-dup-error': katalogKzError && katalogKzError.fromLevel === levelKey }"
+                             @input="katalogKzError = null"
+                             @keyup.enter="saveKatalogEdit()" @keyup.escape="katalogEditKey=null" />
+                    </td>
                     <td><input class="katalog-add-lt" v-model="katalogEditVal.langtext"
                                @keyup.enter="saveKatalogEdit()" @keyup.escape="katalogEditKey=null" /></td>
                     <td class="katalog-td-act">
@@ -2855,7 +2900,7 @@
                   </tr>
                   <!-- Normale Zeile -->
                   <tr v-else class="katalog-table-row" @dblclick="startKatalogEdit(levelKey, entry)">
-                    <td class="katalog-td-kz">{{ entry.kuerzel }}</td>
+                    <td v-if="!['zustand','stellglied'].includes(levelKey)" class="katalog-td-kz">{{ entry.kuerzel }}</td>
                     <td class="katalog-td-lt">{{ entry.langtext }}</td>
                     <td class="katalog-td-act">
                       <button class="katalog-row-btn" @click.stop="startKatalogEdit(levelKey, entry)" title="Bearbeiten">
@@ -2868,22 +2913,28 @@
                   </tr>
                 </template>
                 <tr v-if="!bmkKatalog[levelKey].length && !katalogFilter">
-                  <td colspan="3" class="preset-empty">Noch keine Einträge</td>
+                  <td :colspan="['zustand','stellglied'].includes(levelKey) ? 2 : 3" class="preset-empty">Noch keine Einträge</td>
                 </tr>
                 <tr v-if="katalogFilter && !sortedFilteredKatalog[levelKey].length">
-                  <td colspan="3" class="preset-empty">Keine Treffer</td>
+                  <td :colspan="['zustand','stellglied'].includes(levelKey) ? 2 : 3" class="preset-empty">Keine Treffer</td>
                 </tr>
               </table>
 
               <!-- Neue Zeile hinzufügen -->
               <div class="katalog-add-row">
-                <input class="katalog-add-kz" v-model="newKatalog[levelKey].kuerzel"
-                       placeholder="KZ" maxlength="6"
+                <input v-if="!['zustand','stellglied'].includes(levelKey)"
+                       class="katalog-add-kz" v-model="newKatalog[levelKey].kuerzel"
+                       placeholder="KZ" maxlength="3"
+                       :class="{ 'kz-dup-error': katalogKzError && katalogKzError.fromLevel === levelKey }"
+                       @input="katalogKzError = null"
                        @keyup.enter="addKatalog(levelKey)" />
                 <input class="katalog-add-lt" v-model="newKatalog[levelKey].langtext"
                        :placeholder="'Langtext für ' + level"
                        @keyup.enter="addKatalog(levelKey)" />
                 <button class="btn btn-primary btn-sm" @click="addKatalog(levelKey)">+</button>
+              </div>
+              <div v-if="katalogKzError && katalogKzError.fromLevel === levelKey" class="katalog-kz-error-msg">
+                {{ katalogKzError.message }}
               </div>
             </div>
           </div>
@@ -2953,7 +3004,7 @@ function mkBauraum(name = 'Neuer Bauraum', kuerzel = '')          { return { id:
 function mkFunkDef(name = 'Neue Funktionsdefinition', kuerzel = '') { return { id: uid(), name, kuerzel, funktionen: [] }; }
 function mkFunktion(name = 'Neue Funktion', kuerzel = '')         { return { id: uid(), name, kuerzel, zustände: [] }; }
 function mkZustand(name = 'Neuer Zustand') {
-  return { id: uid(), name, kuerzel: '', stellglied: '', stellgliedKuerzel: '', bemerkungen: '',
+  return { id: uid(), name, stellglied: '', bemerkungen: '',
            DI: '', DO: '', SDI: '', SDO: '', AI: '', AO: '', Sonstige: '', Feldbus: '' };
 }
 
@@ -2969,8 +3020,22 @@ const EA_FIELDS = [
 ];
 
 const STORAGE_KEY = 'uebergabe_v1';
-const VERSION = '1.5.0';
+const VERSION = '1.6.0';
 const CHANGELOG = [
+  {
+    version: '1.6.0',
+    datum: '03.04.2026',
+    änderungen: [
+      'Kürzel-Feld standardmäßig deaktiviert – Eingabe erfolgt ausschließlich über das Benennung-Feld',
+      'Autovervollständigung filtert mit Präfix-Suche (startsWith) nach Kürzel und Langtext',
+      'Bei unbekanntem Langtext wird das Kürzel-Feld automatisch freigegeben (max. 3 Zeichen)',
+      'Duplikat-Erkennung: Bereits vergebenes Kürzel zeigt Inline-Hinweis und leert das Feld',
+      'Neue Kürzel/Langtext-Kombination löst Bestätigungsdialog zur Katalog-Übernahme aus',
+      'Katalog-Auswahl per Klick oder Enter setzt beide Felder ohne Fehlermeldung',
+      'Fehlermeldung wird beim Knotenwechsel und bei gültiger Katalog-Auswahl zuverlässig gelöscht',
+      'Kürzel-Längenbeschränkung (max. 3 Zeichen) auch im BMK-Katalog-Editor eingesetzt',
+    ],
+  },
   {
     version: '1.5.0',
     datum: '01.04.2026',
@@ -3079,7 +3144,9 @@ const app = createApp({
       katalogSortDir: 'asc',
       katalogEditKey: null,
       katalogEditVal: { kuerzel: '', langtext: '' },
-      katalogMeta: { dateiname: null, importDatum: null, hash: null, manuellGeändert: false },
+      katalogKzError: null,
+      structureKzError: null,
+      katalogMeta: { dateiname: null, importDatum: null, hash: null, version: null, versionNr: 0, manuellGeändert: false },
       katalogPromote: null,
       bmkKatalog: {
         station: [],
@@ -3147,7 +3214,6 @@ const app = createApp({
       if (this.curBauraum)  parts.push(this.curBauraum.kuerzel  || this.curBauraum.name);
       if (this.curFunkDef)  parts.push(this.curFunkDef.kuerzel  || this.curFunkDef.name);
       if (this.curFunktion) parts.push(this.curFunktion.kuerzel || this.curFunktion.name);
-      if (this.curZustand)  parts.push(this.curZustand.kuerzel  || this.curZustand.name);
       const filtered = parts.filter(Boolean);
       return filtered.length ? filtered.join('-') : '';
     },
@@ -3312,9 +3378,8 @@ const app = createApp({
         { label: 'B', color: 'var(--lv1)', items: [] },
         { label: 'FD', color: 'var(--lv2)', items: [] },
         { label: 'F', color: 'var(--lv3)', items: [] },
-        { label: 'Z', color: 'var(--lv4)', items: [] },
       ];
-      const seen = [{},{},{},{},{}];
+      const seen = [{},{},{},{}];
       for (const s of this.stationen) {
         if (s.kuerzel && !seen[0][s.kuerzel]) { seen[0][s.kuerzel] = 1; levels[0].items.push({ kz: s.kuerzel, name: s.name }); }
         for (const b of s.bauräume) {
@@ -3323,9 +3388,6 @@ const app = createApp({
             if (fd.kuerzel && !seen[2][fd.kuerzel]) { seen[2][fd.kuerzel] = 1; levels[2].items.push({ kz: fd.kuerzel, name: fd.name }); }
             for (const f of fd.funktionen) {
               if (f.kuerzel && !seen[3][f.kuerzel]) { seen[3][f.kuerzel] = 1; levels[3].items.push({ kz: f.kuerzel, name: f.name }); }
-              for (const z of f.zustände) {
-                if (z.kuerzel && !seen[4][z.kuerzel]) { seen[4][z.kuerzel] = 1; levels[4].items.push({ kz: z.kuerzel, name: z.name }); }
-              }
             }
           }
         }
@@ -3340,6 +3402,7 @@ const app = createApp({
   methods: {
     sel(...idx) {
       this.path = [...idx];
+      this.structureKzError = null;
       // On mobile: close sidebar after selection to show detail
       if (window.innerWidth < 768) this.sidebarOpen = false;
     },
@@ -3393,18 +3456,19 @@ const app = createApp({
     },
     cancelEdit()    { this.editId = null; },
 
-    deepClone(node) {
+    deepClone(node, clearKuerzel = false) {
       const c = { ...node, id: uid() };
-      if (c.bauräume)              c.bauräume = c.bauräume.map(b => this.deepClone(b));
-      if (c.funktionsdefinitionen) c.funktionsdefinitionen = c.funktionsdefinitionen.map(fd => this.deepClone(fd));
-      if (c.funktionen)            c.funktionen = c.funktionen.map(f => this.deepClone(f));
-      if (c.zustände)              c.zustände = c.zustände.map(z => this.deepClone(z));
+      if (clearKuerzel && c.kuerzel !== undefined) c.kuerzel = '';
+      if (c.bauräume)              c.bauräume = c.bauräume.map(b => this.deepClone(b, clearKuerzel));
+      if (c.funktionsdefinitionen) c.funktionsdefinitionen = c.funktionsdefinitionen.map(fd => this.deepClone(fd, clearKuerzel));
+      if (c.funktionen)            c.funktionen = c.funktionen.map(f => this.deepClone(f, clearKuerzel));
+      if (c.zustände)              c.zustände = c.zustände.map(z => this.deepClone(z, clearKuerzel));
       return c;
     },
 
     copyStation(si) {
       this.pushUndo();
-      const clone = this.deepClone(this.stationen[si]);
+      const clone = this.deepClone(this.stationen[si], true);
       clone.name += ' (Kopie)';
       this.stationen.splice(si + 1, 0, clone);
       this.sel(si + 1);
@@ -3412,7 +3476,7 @@ const app = createApp({
     },
     copyBauraum(si, bi) {
       this.pushUndo();
-      const clone = this.deepClone(this.stationen[si].bauräume[bi]);
+      const clone = this.deepClone(this.stationen[si].bauräume[bi], true);
       clone.name += ' (Kopie)';
       this.stationen[si].bauräume.splice(bi + 1, 0, clone);
       this.expandPath([this.stationen[si].id, clone.id]);
@@ -3421,7 +3485,7 @@ const app = createApp({
     },
     copyFunkDef(si, bi, fdi) {
       this.pushUndo();
-      const clone = this.deepClone(this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi]);
+      const clone = this.deepClone(this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi], true);
       clone.name += ' (Kopie)';
       this.stationen[si].bauräume[bi].funktionsdefinitionen.splice(fdi + 1, 0, clone);
       this.expandPath([this.stationen[si].id, this.stationen[si].bauräume[bi].id, clone.id]);
@@ -3430,7 +3494,7 @@ const app = createApp({
     },
     copyFunktion(si, bi, fdi, fi) {
       this.pushUndo();
-      const clone = this.deepClone(this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi].funktionen[fi]);
+      const clone = this.deepClone(this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi].funktionen[fi], true);
       clone.name += ' (Kopie)';
       this.stationen[si].bauräume[bi].funktionsdefinitionen[fdi].funktionen.splice(fi + 1, 0, clone);
       this.expandPath([this.stationen[si].id, this.stationen[si].bauräume[bi].id,
@@ -4230,15 +4294,78 @@ const app = createApp({
       doc.save(`${this.projektname}.pdf`);
     },
 
-    addKatalog(level) {
-      const entry = this.newKatalog[level];
-      const kz = entry.kuerzel.trim().toUpperCase();
-      const lt = entry.langtext.trim();
-      if (!kz || !lt) return;
-      if (!this.bmkKatalog[level].some(e => e.kuerzel === kz)) {
-        this.bmkKatalog[level].push({ kuerzel: kz, langtext: lt });
+    kzUsedInStructure(kz, excludeNodeId) {
+      const labels = { station: 'Stationen', bauraum: 'Bauräume', funktionsdefinition: 'Funktionsdefinitionen', funktion: 'Funktionen' };
+      for (const s of this.stationen) {
+        if (s.id !== excludeNodeId && s.kuerzel === kz) return labels.station;
+        for (const b of s.bauräume) {
+          if (b.id !== excludeNodeId && b.kuerzel === kz) return labels.bauraum;
+          for (const fd of b.funktionsdefinitionen) {
+            if (fd.id !== excludeNodeId && fd.kuerzel === kz) return labels.funktionsdefinition;
+            for (const f of fd.funktionen) {
+              if (f.id !== excludeNodeId && f.kuerzel === kz) return labels.funktion;
+            }
+          }
+        }
       }
+      return null;
+    },
+    setStructureKuerzel(level, node, newKz) {
+      this.structureKzError = null;
+      const kz = (newKz || '').trim().toUpperCase();
+      if (!kz) { node.kuerzel = ''; return; }
+      // Katalog-Pick: Kürzel+Langtext stimmen exakt mit Katalog überein → direkt übernehmen
+      const katalogEntry = this.bmkKatalog[level]?.find(e => e.kuerzel === kz);
+      if (katalogEntry && node.name?.trim().toLowerCase() === katalogEntry.langtext.trim().toLowerCase()) {
+        node.kuerzel = kz;
+        return;
+      }
+      // Manuelle Eingabe: Kürzel nicht im Katalog → Katalog-Duplikat prüfen
+      if (!katalogEntry) {
+        const katalogConflict = this.kzExistsInAnyLevel(kz);
+        if (katalogConflict) {
+          this.structureKzError = { level, message: `Kürzel „${kz}" ist bereits in ${katalogConflict} vergeben.` };
+          node.kuerzel = '';
+          return;
+        }
+      }
+      // Prüfe ob Kürzel bereits in der Struktur verwendet wird
+      const structConflict = this.kzUsedInStructure(kz, node.id);
+      if (structConflict) {
+        this.structureKzError = { level, message: `Kürzel „${kz}" ist bereits in ${structConflict} vergeben.` };
+        node.kuerzel = '';
+        return;
+      }
+      node.kuerzel = kz;
+    },
+    kzExistsInAnyLevel(kz, excludeLevel = null, excludeIdx = -1) {
+      const kzLevels = ['station', 'bauraum', 'funktionsdefinition', 'funktion'];
+      const labels   = { station: 'Stationen', bauraum: 'Bauräume', funktionsdefinition: 'Funktionsdefinitionen', funktion: 'Funktionen' };
+      for (const lvl of kzLevels) {
+        for (let i = 0; i < this.bmkKatalog[lvl].length; i++) {
+          if (lvl === excludeLevel && i === excludeIdx) continue;
+          if (this.bmkKatalog[lvl][i].kuerzel === kz) return labels[lvl];
+        }
+      }
+      return null;
+    },
+    addKatalog(level) {
+      const noKz = ['zustand', 'stellglied'].includes(level);
+      const entry = this.newKatalog[level];
+      const kz = noKz ? '' : entry.kuerzel.trim().toUpperCase();
+      const lt = entry.langtext.trim();
+      if (!lt) return;
+      if (!noKz && !kz) return;
+      if (!noKz) {
+        const conflict = this.kzExistsInAnyLevel(kz);
+        if (conflict) {
+          this.katalogKzError = { fromLevel: level, message: `Kürzel „${kz}" ist bereits in ${conflict} vergeben.` };
+          return;
+        }
+      }
+      this.bmkKatalog[level].push({ kuerzel: kz, langtext: lt });
       this.newKatalog[level] = { kuerzel: '', langtext: '' };
+      this.katalogKzError = null;
     },
     delKatalog(level, idx) { this.bmkKatalog[level].splice(idx, 1); },
     katalogRealIdx(level, entry) {
@@ -4251,13 +4378,37 @@ const app = createApp({
     saveKatalogEdit() {
       if (!this.katalogEditKey) return;
       const { level, idx } = this.katalogEditKey;
-      const kz = this.katalogEditVal.kuerzel.trim().toUpperCase();
+      const noKz = ['zustand', 'stellglied'].includes(level);
+      const oldKz = this.bmkKatalog[level][idx].kuerzel;
+      const kz = noKz ? '' : this.katalogEditVal.kuerzel.trim().toUpperCase();
       const lt = this.katalogEditVal.langtext.trim();
-      if (!kz || !lt) return;
-      const dup = this.bmkKatalog[level].some((e, i) => i !== idx && e.kuerzel === kz);
-      if (dup) return;
+      if (!lt) return;
+      if (!noKz) {
+        if (!kz) return;
+        const conflict = this.kzExistsInAnyLevel(kz, level, idx);
+        if (conflict) {
+          this.katalogKzError = { fromLevel: level, message: `Kürzel „${kz}" ist bereits in ${conflict} vergeben.` };
+          return;
+        }
+      }
       this.bmkKatalog[level][idx] = { kuerzel: kz, langtext: lt };
+      if (!noKz && oldKz && oldKz !== kz) this.renameKuerzelInStructure(level, oldKz, kz);
       this.katalogEditKey = null;
+      this.katalogKzError = null;
+    },
+    renameKuerzelInStructure(level, oldKz, newKz) {
+      for (const s of this.stationen) {
+        if (level === 'station' && s.kuerzel === oldKz) { s.kuerzel = newKz; continue; }
+        for (const b of s.bauräume) {
+          if (level === 'bauraum' && b.kuerzel === oldKz) { b.kuerzel = newKz; continue; }
+          for (const fd of b.funktionsdefinitionen) {
+            if (level === 'funktionsdefinition' && fd.kuerzel === oldKz) { fd.kuerzel = newKz; continue; }
+            for (const f of fd.funktionen) {
+              if (level === 'funktion' && f.kuerzel === oldKz) f.kuerzel = newKz;
+            }
+          }
+        }
+      }
     },
     onNonCatalogEntry(ev) {
       if (!ev.langtext || !ev.level || !ev.kuerzel) return;
@@ -4274,8 +4425,6 @@ const app = createApp({
           bauraum:           () => { if (this.curBauraum)  this.curBauraum.kuerzel  = newKz; },
           funktionsdefinition: () => { if (this.curFunkDef) this.curFunkDef.kuerzel = newKz; },
           funktion:          () => { if (this.curFunktion) this.curFunktion.kuerzel = newKz; },
-          zustand:           () => { if (this.curZustand)  this.curZustand.kuerzel  = newKz; },
-          stellglied:        () => { if (this.curZustand)  this.curZustand.stellgliedKuerzel = newKz; },
         };
         nodeMap[ev.level]?.();
       });
@@ -4293,6 +4442,15 @@ const app = createApp({
         this.katalogOpenLevel = level;
         this.newKatalog[level] = { kuerzel: '', langtext: lt };
         this.showSettings = true;
+        this.katalogPromote = null;
+        clearTimeout(this._promoteTimer);
+        return;
+      }
+      const conflict = this.kzExistsInAnyLevel(kz);
+      if (conflict) {
+        this.savedMsg = `Kürzel „${kz}" ist bereits in ${conflict} vergeben.`;
+        clearTimeout(this._saveTimer);
+        this._saveTimer = setTimeout(() => { this.savedMsg = ''; }, 3000);
         this.katalogPromote = null;
         clearTimeout(this._promoteTimer);
         return;
@@ -4362,6 +4520,7 @@ const app = createApp({
         if (!file) return;
       }
 
+      let importedVersion = null, importedVersionNr = 0;
       if (file.name.endsWith('.json')) {
         const d = JSON.parse(await file.text());
         delete d._meta;
@@ -4371,6 +4530,22 @@ const app = createApp({
       } else {
         const buf = await file.arrayBuffer();
         const wb = XLSX.read(buf, { type: 'array' });
+
+        // Version aus Meta-Sheet lesen
+        const metaSheet = wb.Sheets['Meta'];
+        if (metaSheet) {
+          const metaRows = XLSX.utils.sheet_to_json(metaSheet, { header: 1 });
+          for (const row of metaRows) {
+            if (row[0] === 'Version') importedVersion = String(row[1]);
+            if (row[0] === 'Versionsnummer') importedVersionNr = Number(row[1]) || 0;
+          }
+        }
+        // Fallback: Version aus Dateiname parsen (z.B. BMK-Katalog_20260402_0001.xlsx)
+        if (!importedVersion) {
+          const m = file.name.match(/(\d{8})_(\d{4})/);
+          if (m) { importedVersion = `${m[1]}-${m[2]}`; importedVersionNr = Number(m[2]) || 0; }
+        }
+
         const sheetMap = {
           'station': 'station', 'bauraum': 'bauraum',
           'funktionsdefinition': 'funktionsdefinition', 'funktion': 'funktion',
@@ -4423,6 +4598,8 @@ const app = createApp({
         dateiname: file.name,
         importDatum: new Date().toISOString(),
         hash: this.computeKatalogHash(),
+        version: importedVersion,
+        versionNr: importedVersionNr,
         manuellGeändert: false,
       };
       this.savedMsg = '✓ Katalog importiert';
@@ -4431,13 +4608,40 @@ const app = createApp({
     },
 
     exportKatalog() {
-      const exportData = { ...this.bmkKatalog, _meta: {
-        exportDatum: new Date().toISOString(),
-        hash: this.computeKatalogHash(),
-        quelle: this.katalogMeta.dateiname || 'Manuell',
-      }};
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-      this._dl(blob, 'bmk-katalog.json');
+      const now = new Date();
+      const dateStr = now.getFullYear().toString()
+        + String(now.getMonth() + 1).padStart(2, '0')
+        + String(now.getDate()).padStart(2, '0');
+      const nextNr = (this.katalogMeta.versionNr || 0) + 1;
+      const nrStr = String(nextNr).padStart(4, '0');
+      const version = `${dateStr}-${nrStr}`;
+
+      const wb = XLSX.utils.book_new();
+
+      // Meta-Sheet mit Versionsinformationen
+      const metaWs = XLSX.utils.aoa_to_sheet([
+        ['Datum', dateStr],
+        ['Versionsnummer', nextNr],
+        ['Version', version],
+        ['Quelle', this.katalogMeta.dateiname || 'Manuell'],
+      ]);
+      XLSX.utils.book_append_sheet(wb, metaWs, 'Meta');
+
+      // Ein Sheet pro Ebene
+      const levels = ['station', 'bauraum', 'funktionsdefinition', 'funktion', 'zustand', 'stellglied'];
+      for (const level of levels) {
+        const rows = [['Kürzel', 'Langtext']];
+        for (const e of this.bmkKatalog[level]) rows.push([e.kuerzel, e.langtext]);
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), level);
+      }
+
+      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+      this.katalogMeta.version = version;
+      this.katalogMeta.versionNr = nextNr;
+
+      this._dl(blob, `BMK-Katalog_${dateStr}_${nrStr}.xlsx`);
     },
 
     _migrateKuerzel() {
@@ -4446,19 +4650,20 @@ const app = createApp({
         { key: 'bauraum', children: 'funktionsdefinitionen' },
         { key: 'funktionsdefinition', children: 'funktionen' },
         { key: 'funktion', children: 'zustände' },
-        { key: 'zustand', children: null },
       ];
+      const usedKz = new Set();
       const walk = (nodes, depth) => {
         if (!nodes || depth >= levels.length) return;
         const lvl = levels[depth];
         for (const node of nodes) {
           if (node.kuerzel === undefined) node.kuerzel = '';
-          if (!node.kuerzel) node.kuerzel = this.resolveKuerzel(node.name, lvl.key);
-          if (lvl.key === 'zustand') {
-            if (node.stellgliedKuerzel === undefined) node.stellgliedKuerzel = '';
-            if (!node.stellgliedKuerzel && node.stellglied) {
-              node.stellgliedKuerzel = this.resolveKuerzel(node.stellglied, 'stellglied');
-            }
+          if (!node.kuerzel) {
+            const resolved = this.resolveKuerzel(node.name, lvl.key);
+            if (resolved && !usedKz.has(resolved)) node.kuerzel = resolved;
+          }
+          if (node.kuerzel) {
+            if (usedKz.has(node.kuerzel)) { node.kuerzel = ''; }
+            else { usedKz.add(node.kuerzel); }
           }
           if (lvl.children && node[lvl.children]) walk(node[lvl.children], depth + 1);
         }
@@ -4623,79 +4828,98 @@ app.component('bmk-combo', {
     level:       { type: String,  default: '' },
     showKuerzel: { type: Boolean, default: true },
   },
-  emits: ['update:modelValue', 'update:kuerzel', 'non-catalog-entry'],
+  emits: ['update:modelValue', 'update:kuerzel', 'non-catalog-entry', 'kz-input'],
   data() {
-    return { showDrop: false, hlIdx: 0, query: '' };
+    return { showDrop: false, hlIdx: 0, query: '', kzQuery: '' };
   },
   computed: {
     filtered() {
       if (!this.query) return this.items;
       const q = this.query.toLowerCase();
       return this.items.filter(it =>
-        it.kuerzel.toLowerCase().includes(q) || it.langtext.toLowerCase().includes(q)
+        it.kuerzel.toLowerCase().startsWith(q) || it.langtext.toLowerCase().startsWith(q)
       );
     },
-    isCatalogMatch() {
-      if (!this.query.trim()) return false;
-      return this.items.some(
-        it => it.langtext.toLowerCase() === this.query.trim().toLowerCase()
-      );
+    /* Katalog-Treffer: Langtext existiert exakt im Katalog */
+    catalogMatch() {
+      const q = this.query.trim().toLowerCase();
+      if (!q) return null;
+      return this.items.find(it => it.langtext.toLowerCase() === q) || null;
+    },
+    /* Kürzel-Feld nur aktiv wenn Langtext NICHT im Katalog */
+    isKzEnabled() {
+      return this.query.trim().length > 0 && !this.catalogMatch;
     },
   },
   watch: {
     modelValue(v) { this.query = v; },
+    kuerzel(v)    { this.kzQuery = v; },
   },
-  created() { this.query = this.modelValue; },
+  created() { this.query = this.modelValue; this.kzQuery = this.kuerzel; },
   methods: {
+    /* ── Langtext-Feld ─────────────────────────────────────── */
     onInput(e) {
       this.query = e.target.value;
       this.$emit('update:modelValue', e.target.value);
       this.showDrop = true;
       this.hlIdx = 0;
-      // Kürzel NUR bei exaktem Katalog-Treffer automatisch befüllen,
-      // sonst unverändert lassen (Nutzer kann links frei tippen)
+      // Kürzel bei exaktem Katalog-Treffer automatisch befüllen
       const match = this.items.find(it => it.langtext.toLowerCase() === e.target.value.trim().toLowerCase());
-      if (match) this.$emit('update:kuerzel', match.kuerzel);
+      if (match) {
+        this.kzQuery = match.kuerzel;
+        this.$emit('update:kuerzel', match.kuerzel);
+        this.$nextTick(() => { this.kzQuery = this.kuerzel; });
+      } else {
+        // Kein Katalog-Match → Kürzel leeren, Feld wird freigegeben
+        this.kzQuery = '';
+        this.$emit('update:kuerzel', '');
+      }
     },
-    openDrop() {
-      this.showDrop = true;
-      this.hlIdx = 0;
-    },
+    openDrop() { this.showDrop = true; this.hlIdx = 0; },
     closeDrop() {
-      setTimeout(() => {
-        this.showDrop = false;
-        this.checkNonCatalog();
-      }, 150);
+      setTimeout(() => { this.showDrop = false; }, 150);
     },
     pick(item) {
       this.query = item.langtext;
+      this.kzQuery = item.kuerzel;
       this.$emit('update:modelValue', item.langtext);
       this.$emit('update:kuerzel', item.kuerzel);
       this.showDrop = false;
-    },
-    navDown() {
-      if (this.hlIdx < this.filtered.length - 1) this.hlIdx++;
-    },
-    navUp() {
-      if (this.hlIdx > 0) this.hlIdx--;
-    },
-    checkNonCatalog() {
-      const val = this.query.trim();
-      const kz  = (this.kuerzel || '').trim();
-      if (
-        val && kz && this.level &&
-        !this.items.some(it => it.langtext.toLowerCase() === val.toLowerCase())
-      ) {
-        this.$emit('non-catalog-entry', { langtext: val, kuerzel: kz, level: this.level });
-      }
     },
     pickHighlighted() {
       if (this.filtered.length && this.showDrop) {
         this.pick(this.filtered[this.hlIdx]);
       } else {
         this.showDrop = false;
-        this.checkNonCatalog();
       }
+    },
+    navDown() { if (this.hlIdx < this.filtered.length - 1) this.hlIdx++; },
+    navUp()   { if (this.hlIdx > 0) this.hlIdx--; },
+
+    /* ── Kürzel-Feld (nur aktiv wenn Langtext nicht im Katalog) ── */
+    onKzInput(e) {
+      this.kzQuery = e.target.value;
+      this.$emit('kz-input');
+    },
+    commitKz() {
+      const val = this.kzQuery.trim();
+      if (!val) {
+        this.$emit('update:kuerzel', '');
+        return;
+      }
+      this.$emit('update:kuerzel', val);
+      this.$nextTick(() => {
+        this.kzQuery = this.kuerzel;
+        // Non-Catalog-Entry prüfen wenn beide Felder befüllt
+        const lt = this.query.trim();
+        const kz = (this.kuerzel || '').trim();
+        if (lt && kz && this.level && !this.catalogMatch) {
+          this.$emit('non-catalog-entry', { langtext: lt, kuerzel: kz, level: this.level });
+        }
+      });
+    },
+    onKzBlur() {
+      this.commitKz();
     },
   },
   template: `
@@ -4703,10 +4927,13 @@ app.component('bmk-combo', {
       <div class="bmk-combo-inner">
         <input v-if="showKuerzel"
                class="bmk-kz-input"
-               :value="kuerzel"
-               :readonly="isCatalogMatch"
-               :class="{ 'kz-locked': isCatalogMatch }"
-               @input="!isCatalogMatch && $emit('update:kuerzel', $event.target.value)"
+               :value="kzQuery"
+               :disabled="!isKzEnabled"
+               :class="{ 'kz-locked': !isKzEnabled }"
+               @input="onKzInput($event)"
+               @blur="onKzBlur"
+               @keydown.enter.prevent="commitKz"
+               maxlength="3"
                placeholder="Kz." />
         <input class="finput bmk-bez-input"
                :value="query"
