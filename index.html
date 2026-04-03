@@ -1298,6 +1298,32 @@
       line-height: 1.6;
     }
 
+    .modal-footer {
+      display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+      padding: 12px 22px; border-top: 1px solid var(--border); flex-shrink: 0;
+    }
+    .tb-drop-divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+    /* ── Exportspalten ── */
+    .excol-group { margin-bottom: 16px; }
+    .excol-group-title {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .06em; color: var(--text-2); margin-bottom: 6px;
+    }
+    .excol-checks { display: flex; flex-wrap: wrap; gap: 6px; }
+    .excol-check {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 13px; cursor: pointer;
+      padding: 5px 10px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      transition: background var(--trans), border-color var(--trans);
+      user-select: none;
+    }
+    .excol-check:hover { background: var(--hover); border-color: var(--border-str); }
+    .excol-check input[type=checkbox] { accent-color: var(--accent); width: 14px; height: 14px; cursor: pointer; }
+
     /* ── Changelog Modal ── */
     .cl-modal {
       background: var(--surface);
@@ -1935,6 +1961,15 @@
               <path d="M4 2h6l4 4v9H4V2z"/><path d="M10 2v4h4"/><path d="M6 9h4M6 12h3"/>
             </svg>
             PDF exportieren
+          </button>
+          <div class="tb-drop-divider"></div>
+          <button class="tb-drop-item" @click="showExportColModal=true; showExportMenu=false">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="1" y="3" width="14" height="10" rx="1.5"/>
+              <path d="M5 3v10M10 3v10"/>
+            </svg>
+            Spalten konfigurieren…
+            <span v-if="hiddenExportCols.length" style="margin-left:auto;font-size:10px;color:var(--accent);font-weight:600">{{ hiddenExportCols.length }} ausgeblendet</span>
           </button>
         </div>
       </div>
@@ -2955,6 +2990,41 @@
     </div>
   </transition>
 
+  <!-- ─────────── EXPORTSPALTEN MODAL ──────────────────────── -->
+  <div class="modal-overlay" v-if="showExportColModal" @click.self="showExportColModal=false">
+    <div class="modal" style="width:480px">
+      <div class="modal-hdr">
+        <span class="modal-title">Exportspalten konfigurieren</span>
+        <button class="modal-close" @click="showExportColModal=false" aria-label="Schließen">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M1 1l10 10M11 1L1 11"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-hint">Wähle die Spalten, die beim Excel- und PDF-Export erscheinen sollen.</p>
+
+        <div class="excol-group" v-for="grp in exportColGroups" :key="grp.name">
+          <div class="excol-group-title">{{ grp.name }}</div>
+          <div class="excol-checks">
+            <label class="excol-check" v-for="col in grp.cols" :key="col.key">
+              <input type="checkbox"
+                     :checked="!hiddenExportCols.includes(col.key)"
+                     @change="toggleExportCol(col.key)">
+              <span>{{ col.label }}</span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-sm" @click="hiddenExportCols=[]" :disabled="!hiddenExportCols.length">
+          Alle einblenden
+        </button>
+        <button class="btn btn-primary btn-sm" @click="showExportColModal=false">Schließen</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ─────────────── CHANGELOG MODAL ───────────────────────── -->
   <div class="modal-overlay" v-if="showChangelog" @click.self="closeChangelog">
     <div class="cl-modal">
@@ -3019,6 +3089,24 @@ const EA_FIELDS = [
   { key: 'Feldbus',  label: 'Feldbus-Koppler' },
 ];
 
+const EXPORT_COLS = [
+  { key:'bmk',         label:'BMK',          pdfLabel:'BMK',              group:null,        excelKey:'bmk', excelWidth:18, pdfWidth:22 },
+  { key:'bauraum',     label:'Bauraum',       pdfLabel:'Bauraum',          group:null,        excelKey:'a',   excelWidth:28, pdfWidth:28 },
+  { key:'fd',          label:'Funk.-Def.',    pdfLabel:'Funk.-\nDefinition',group:null,       excelKey:'b',   excelWidth:28, pdfWidth:28 },
+  { key:'funktion',    label:'Funktion',      pdfLabel:'Funktion',         group:null,        excelKey:'c',   excelWidth:32, pdfWidth:32 },
+  { key:'zustand',     label:'Zustand',       pdfLabel:'Zustand',          group:null,        excelKey:'d',   excelWidth:16, pdfWidth:16 },
+  { key:'stellglied',  label:'Stellglied',    pdfLabel:'Stellglied',       group:null,        excelKey:'e',   excelWidth:42, pdfWidth:52 },
+  { key:'bemerkungen', label:'Bemerkungen',   pdfLabel:'Bemerkungen',      group:null,        excelKey:'f',   excelWidth:40, pdfWidth:46 },
+  { key:'DI',          label:'DI',            pdfLabel:'DI',               group:'Digital',   excelKey:'g',   excelWidth:7,  pdfWidth:10 },
+  { key:'DO',          label:'DO',            pdfLabel:'DO',               group:'Digital',   excelKey:'h',   excelWidth:7,  pdfWidth:10 },
+  { key:'SDI',         label:'SDI',           pdfLabel:'SDI',              group:'Sicher D.', excelKey:'i',   excelWidth:7,  pdfWidth:10 },
+  { key:'SDO',         label:'SDO',           pdfLabel:'SDO',              group:'Sicher D.', excelKey:'j',   excelWidth:7,  pdfWidth:10 },
+  { key:'AI',          label:'AI',            pdfLabel:'AI',               group:'Analog',    excelKey:'k',   excelWidth:7,  pdfWidth:10 },
+  { key:'AO',          label:'AO',            pdfLabel:'AO',               group:'Analog',    excelKey:'l',   excelWidth:7,  pdfWidth:10 },
+  { key:'Sonstige',    label:'Sons.',         pdfLabel:'Sons.',            group:'Sonstige',  excelKey:'m',   excelWidth:10, pdfWidth:13 },
+  { key:'Feldbus',     label:'Feldbus',       pdfLabel:'Feldbus',          group:'Feldbus',   excelKey:'n',   excelWidth:15, pdfWidth:20 },
+];
+
 const STORAGE_KEY = 'uebergabe_v1';
 const VERSION = '1.6.0';
 const CHANGELOG = [
@@ -3034,6 +3122,7 @@ const CHANGELOG = [
       'Katalog-Auswahl per Klick oder Enter setzt beide Felder ohne Fehlermeldung',
       'Fehlermeldung wird beim Knotenwechsel und bei gültiger Katalog-Auswahl zuverlässig gelöscht',
       'Kürzel-Längenbeschränkung (max. 3 Zeichen) auch im BMK-Katalog-Editor eingesetzt',
+      'Export: Spaltenauswahl – beliebige Spalten beim Excel- und PDF-Export ein-/ausblendbar (gruppiert nach Digital, Sicher D., Analog, Sonstige, Feldbus)',
     ],
   },
   {
@@ -3137,6 +3226,8 @@ const app = createApp({
       ftFocus: null,
       showSaveMenu: false,
       showExportMenu: false,
+      showExportColModal: false,
+      hiddenExportCols: [],
       legendOpen: true,
       bmkCopied: false,
       katalogOpenLevel: 'station',
@@ -3176,6 +3267,15 @@ const app = createApp({
   computed: {
     version()     { return VERSION; },
     changelog()   { return CHANGELOG; },
+    exportColGroups() {
+      const groups = [
+        { name: 'Allgemein', cols: EXPORT_COLS.filter(c => !c.group) },
+        ...['Digital','Sicher D.','Analog','Sonstige','Feldbus'].map(g => ({
+          name: g, cols: EXPORT_COLS.filter(c => c.group === g),
+        })),
+      ];
+      return groups.filter(g => g.cols.length);
+    },
     filteredKatalog() {
       const q = this.katalogFilter.trim().toLowerCase();
       if (!q) return this.bmkKatalog;
@@ -3400,6 +3500,39 @@ const app = createApp({
   },
 
   methods: {
+    toggleExportCol(key) {
+      const idx = this.hiddenExportCols.indexOf(key);
+      if (idx === -1) this.hiddenExportCols.push(key);
+      else            this.hiddenExportCols.splice(idx, 1);
+    },
+    _buildGroupHeader(visCols, forPdf = false) {
+      // Erzeugt die Gruppenköpfe-Zeile für Excel (Array von Label-Strings) bzw. PDF (Array von Objekten)
+      const result = [];
+      const generalCount = visCols.filter(c => !c.group).length;
+      const pdfGroupStyles = (i) => ({
+        halign:'center',
+        fillColor: i % 2 === 0 ? [22,64,110] : [18,55,95],
+        textColor:[180,210,240], fontSize:6, fontStyle:'bold',
+      });
+      if (forPdf) {
+        if (generalCount) result.push({ content:'', colSpan:generalCount, styles:{fillColor:[15,41,66], textColor:255} });
+        let gi = 0;
+        for (const groupName of ['Digital','Sicher D.','Analog','Sonstige','Feldbus']) {
+          const count = visCols.filter(c => c.group === groupName).length;
+          if (count) { result.push({ content:groupName, colSpan:count, styles:pdfGroupStyles(gi) }); gi++; }
+        }
+      } else {
+        // Excel: Array of cell values (first cell of group gets label, rest empty)
+        const cells = new Array(visCols.length).fill('');
+        let ci = generalCount;
+        for (const groupName of ['Digital','Sicher D.','Analog','Sonstige','Feldbus']) {
+          const count = visCols.filter(c => c.group === groupName).length;
+          if (count) { cells[ci] = groupName; ci += count; }
+        }
+        return cells;
+      }
+      return result;
+    },
     sel(...idx) {
       this.path = [...idx];
       this.structureKzError = null;
@@ -3986,6 +4119,9 @@ const app = createApp({
       const rows = this.flattenData();
       if (!rows.length) { alert('Noch keine Zustände erfasst.'); return; }
 
+      const visCols = EXPORT_COLS.filter(c => !this.hiddenExportCols.includes(c.key));
+      if (!visCols.length) { alert('Keine Spalten zum Exportieren ausgewählt.'); return; }
+
       const wb = new ExcelJS.Workbook();
       wb.creator = 'Übergabeprotokoll App';
       wb.created = new Date();
@@ -4003,49 +4139,64 @@ const app = createApp({
         { argb: 'FFF6FFF6' }, { argb: 'FFFFF7FD' },
       ];
 
-      // Spaltenbreiten (15 Spalten: BMK + ohne Station)
-      ws.columns = [
-        { key:'bmk', width:18 },
-        { key:'a', width:28 }, { key:'b', width:28 }, { key:'c', width:32 }, { key:'d', width:16 },
-        { key:'e', width:42 }, { key:'f', width:40 },
-        { key:'g', width:7  }, { key:'h', width:7  }, { key:'i', width:7  }, { key:'j', width:7  },
-        { key:'k', width:7  }, { key:'l', width:7  }, { key:'m', width:10 }, { key:'n', width:15 },
-      ];
+      const NCOLS = visCols.length;
+      ws.columns = visCols.map(c => ({ key: c.excelKey, width: c.excelWidth }));
 
-      const NCOLS = 15;
       const centerBold = (cell, bg, fg, sz = 8) => {
         cell.fill = { type:'pattern', pattern:'solid', fgColor: bg };
         cell.font = { bold:true, color: fg, size: sz };
         cell.alignment = { horizontal:'center', vertical:'middle', wrapText:false };
       };
 
-      // Zeile 1: E/A-Gruppenbezeichner
-      const grp = ws.addRow(['','','','','','','','Digital','','Sicher D.','','Analog','','Sonstige','Feldbus']);
+      // Zeile 1: E/A-Gruppenbezeichner (dynamisch)
+      const grpCells = this._buildGroupHeader(visCols, false);
+      const grp = ws.addRow(grpCells);
       grp.height = 14;
+      const generalCount = visCols.filter(c => !c.group).length;
       grp.eachCell({ includeEmpty:true }, (cell, col) => {
-        cell.fill = { type:'pattern', pattern:'solid', fgColor: col <= 7 ? navy : grpBlue };
+        cell.fill = { type:'pattern', pattern:'solid', fgColor: col <= generalCount ? navy : grpBlue };
         cell.font = { bold:true, color:white, size:7 };
         cell.alignment = { horizontal:'center', vertical:'middle' };
       });
-      ws.mergeCells(1,8,1,9); ws.mergeCells(1,10,1,11); ws.mergeCells(1,12,1,13);
+      // Gruppen zusammenführen
+      let ci = generalCount + 1;
+      for (const groupName of ['Digital','Sicher D.','Analog','Sonstige','Feldbus']) {
+        const count = visCols.filter(c => c.group === groupName).length;
+        if (count > 1) { ws.mergeCells(1, ci, 1, ci + count - 1); }
+        ci += count;
+      }
 
       // Zeile 2: Spaltenbezeichner
-      const hdr = ws.addRow(['BMK','Bauraum','Funk.-Def.','Funktion','Zustand','Stellglied','Bemerkungen','DI','DO','SDI','SDO','AI','AO','Sons.','Feldbus']);
+      const hdr = ws.addRow(visCols.map(c => c.label));
       hdr.height = 16;
       hdr.eachCell({ includeEmpty:true }, cell => centerBold(cell, navyMid, white, 8.5));
 
       // Zeilen einfrieren
       ws.views = [{ state:'frozen', xSplit:0, ySplit:2, topLeftCell:'A3' }];
 
+      // Hilfsfunktion: Zeilenwerte für sichtbare Spalten
+      const rowValues = (r) => visCols.map(c => {
+        if (c.key === 'bmk')         return r.BMK || '';
+        if (c.key === 'bauraum')     return r.Bauraum;
+        if (c.key === 'fd')          return r.Funktionsdefinition;
+        if (c.key === 'funktion')    return r.Funktion;
+        if (c.key === 'zustand')     return r.Zustand;
+        if (c.key === 'stellglied')  return r.Stellglied;
+        if (c.key === 'bemerkungen') return r.Bemerkungen;
+        if (c.key === 'Feldbus')     return r['Feldbus-Koppler'] || '';
+        return r[c.key] || '';
+      });
+
       // Daten
       const stNames = [...new Set(rows.map(r => r.Station))];
+      const eaCols = visCols.filter(c => c.group);
       for (let si = 0; si < stNames.length; si++) {
         const stName = stNames[si];
         const stRows = rows.filter(r => r.Station === stName);
         const stColor = stColors[si % stColors.length];
 
         // Stations-Sektionszeile
-        const sec = ws.addRow([stName,'','','','','','','','','','','','','','']);
+        const sec = ws.addRow([stName, ...new Array(NCOLS - 1).fill('')]);
         ws.mergeCells(sec.number, 1, sec.number, NCOLS);
         sec.height = 14;
         sec.eachCell({ includeEmpty:true }, cell => {
@@ -4055,30 +4206,37 @@ const app = createApp({
         });
 
         // Datenzeilen
+        const generalEnd = generalCount; // Spaltenindex-Grenze
         for (const r of stRows) {
-          const dr = ws.addRow([
-            r.BMK||'', r.Bauraum, r.Funktionsdefinition, r.Funktion, r.Zustand,
-            r.Stellglied, r.Bemerkungen,
-            r.DI||'', r.DO||'', r.SDI||'', r.SDO||'', r.AI||'', r.AO||'', r.Sonstige||'', r['Feldbus-Koppler']||'',
-          ]);
+          const dr = ws.addRow(rowValues(r));
           dr.height = 14;
           dr.eachCell({ includeEmpty:true }, (cell, col) => {
             cell.fill = { type:'pattern', pattern:'solid', fgColor: stColor };
             cell.font = { size:9 };
-            cell.alignment = { vertical:'middle', horizontal: col > 7 ? 'center' : 'left', wrapText: col <= 7 };
+            cell.alignment = { vertical:'middle', horizontal: col > generalEnd ? 'center' : 'left', wrapText: col <= generalEnd };
           });
         }
 
-        // Summenzeile
-        const sums = ['DI','DO','SDI','SDO','AI','AO','Sonstige','Feldbus-Koppler']
-          .map(k => stRows.reduce((a, r) => a + (parseInt(r[k]) || 0), 0));
-        const sr = ws.addRow(['','','',`∑ ${stName}`,'','','',...sums]);
-        sr.height = 14;
-        sr.eachCell({ includeEmpty:true }, (cell, col) => {
-          cell.fill = { type:'pattern', pattern:'solid', fgColor: steelBg };
-          cell.font = { bold:true, color:steelFg, size:9 };
-          cell.alignment = { vertical:'middle', horizontal: col > 7 ? 'center' : 'left' };
-        });
+        // Summenzeile (nur für sichtbare E/A-Spalten)
+        if (eaCols.length) {
+          const sumRow = new Array(NCOLS).fill('');
+          // Label in Spalte 4 (Funktion) falls vorhanden, sonst erste Spalte
+          const labelColIdx = visCols.findIndex(c => c.key === 'funktion');
+          if (labelColIdx >= 0) sumRow[labelColIdx] = `∑ ${stName}`;
+          else sumRow[0] = `∑ ${stName}`;
+          for (const ec of eaCols) {
+            const ci2 = visCols.indexOf(ec);
+            const eaKey = ec.key === 'Feldbus' ? 'Feldbus-Koppler' : ec.key;
+            sumRow[ci2] = stRows.reduce((a, r) => a + (parseInt(r[eaKey]) || 0), 0);
+          }
+          const sr = ws.addRow(sumRow);
+          sr.height = 14;
+          sr.eachCell({ includeEmpty:true }, (cell, col) => {
+            cell.fill = { type:'pattern', pattern:'solid', fgColor: steelBg };
+            cell.font = { bold:true, color:steelFg, size:9 };
+            cell.alignment = { vertical:'middle', horizontal: col > generalEnd ? 'center' : 'left' };
+          });
+        }
       }
 
       // ── Tabellenblatt „Legende" ─────────────────────────────────
@@ -4125,6 +4283,10 @@ const app = createApp({
     exportPDF() {
       const rows = this.flattenData();
       if (!rows.length) { alert('Noch keine Zustände erfasst.'); return; }
+
+      const visCols = EXPORT_COLS.filter(c => !this.hiddenExportCols.includes(c.key));
+      if (!visCols.length) { alert('Keine Spalten zum Exportieren ausgewählt.'); return; }
+
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a3' });
       const W = doc.internal.pageSize.getWidth();
@@ -4152,6 +4314,19 @@ const app = createApp({
       };
       drawHeader();
 
+      // ── Hilfsfunktion: Zeilenwerte für sichtbare Spalten ────────
+      const pdfRowValues = (r) => visCols.map(c => {
+        if (c.key === 'bmk')         return r.BMK || '';
+        if (c.key === 'bauraum')     return r.Bauraum;
+        if (c.key === 'fd')          return r.Funktionsdefinition;
+        if (c.key === 'funktion')    return r.Funktion;
+        if (c.key === 'zustand')     return r.Zustand;
+        if (c.key === 'stellglied')  return r.Stellglied;
+        if (c.key === 'bemerkungen') return r.Bemerkungen;
+        if (c.key === 'Feldbus')     return r['Feldbus-Koppler'];
+        return r[c.key];
+      });
+
       // ── Daten aufbauen ──────────────────────────────────────────
       const stNames = [...new Set(rows.map(r => r.Station))];
       const stColors = [
@@ -4162,6 +4337,8 @@ const app = createApp({
       const stationHeaderIndices = new Set();
       const sumRowIndices = new Set();
       const rowStationIndex = []; // für Farbzuweisung
+      const eaCols = visCols.filter(c => c.group);
+      const NCOLS = visCols.length;
 
       for (let si = 0; si < stNames.length; si++) {
         const stName = stNames[si];
@@ -4170,41 +4347,42 @@ const app = createApp({
         // Stations-Sektionszeile
         stationHeaderIndices.add(body.length);
         rowStationIndex.push(si);
-        body.push([stName, '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+        body.push([stName, ...new Array(NCOLS - 1).fill('')]);
 
         // Datenzeilen
         for (const r of stRows) {
           rowStationIndex.push(si);
-          body.push([
-            r.BMK||'', r.Bauraum, r.Funktionsdefinition, r.Funktion, r.Zustand,
-            r.Stellglied, r.Bemerkungen,
-            r.DI, r.DO, r.SDI, r.SDO, r.AI, r.AO, r.Sonstige, r['Feldbus-Koppler'],
-          ]);
+          body.push(pdfRowValues(r));
         }
 
-        // Summenzeile
-        const sums = ['DI','DO','SDI','SDO','AI','AO','Sonstige','Feldbus-Koppler']
-          .map(k => stRows.reduce((a, r) => a + (parseInt(r[k]) || 0), 0));
-        sumRowIndices.add(body.length);
-        rowStationIndex.push(si);
-        body.push(['', '', '', `∑ Summe`, '', '', '', ...sums]);
+        // Summenzeile (nur falls E/A-Spalten sichtbar)
+        if (eaCols.length) {
+          const sumRow = new Array(NCOLS).fill('');
+          const labelIdx = visCols.findIndex(c => c.key === 'funktion');
+          if (labelIdx >= 0) sumRow[labelIdx] = `∑ Summe`;
+          else sumRow[0] = `∑ Summe`;
+          for (const ec of eaCols) {
+            const eaKey = ec.key === 'Feldbus' ? 'Feldbus-Koppler' : ec.key;
+            sumRow[visCols.indexOf(ec)] = stRows.reduce((a, r) => a + (parseInt(r[eaKey]) || 0), 0);
+          }
+          sumRowIndices.add(body.length);
+          rowStationIndex.push(si);
+          body.push(sumRow);
+        }
       }
+
+      // ── columnStyles dynamisch ───────────────────────────────────
+      const columnStyles = {};
+      visCols.forEach((c, i) => {
+        columnStyles[i] = { cellWidth: c.pdfWidth };
+        if (c.group) columnStyles[i].halign = 'center';
+      });
 
       // ── autoTable ───────────────────────────────────────────────
       doc.autoTable({
         head: [
-          // Zeile 1: E/A-Gruppenbezeichner
-          [
-            {content:'', colSpan:7, styles:{fillColor:[15,41,66], textColor:255}},
-            {content:'Digital',   colSpan:2, styles:{halign:'center', fillColor:[22,64,110], textColor:[180,210,240], fontSize:6, fontStyle:'bold'}},
-            {content:'Sicher D.', colSpan:2, styles:{halign:'center', fillColor:[18,55,95],  textColor:[180,210,240], fontSize:6, fontStyle:'bold'}},
-            {content:'Analog',    colSpan:2, styles:{halign:'center', fillColor:[22,64,110], textColor:[180,210,240], fontSize:6, fontStyle:'bold'}},
-            {content:'Sons.',     colSpan:1, styles:{halign:'center', fillColor:[18,55,95],  textColor:[180,210,240], fontSize:6, fontStyle:'bold'}},
-            {content:'Feldbus',   colSpan:1, styles:{halign:'center', fillColor:[22,64,110], textColor:[180,210,240], fontSize:6, fontStyle:'bold'}},
-          ],
-          // Zeile 2: Spaltenbezeichner
-          ['BMK','Bauraum','Funk.-\nDefinition','Funktion','Zustand','Stellglied','Bemerkungen',
-           'DI','DO','SDI','SDO','AI','AO','Sons.','Feldbus'],
+          this._buildGroupHeader(visCols, true),
+          visCols.map(c => c.pdfLabel),
         ],
         body,
         startY: 34,
@@ -4214,31 +4392,21 @@ const app = createApp({
           fontStyle: 'bold', fontSize: 7, halign: 'center', valign: 'middle',
         },
         bodyStyles: { fontSize: 7, valign: 'middle', minCellHeight: 6 },
-        columnStyles: {
-          0:{cellWidth:22}, 1:{cellWidth:28}, 2:{cellWidth:28}, 3:{cellWidth:32}, 4:{cellWidth:16},
-          5:{cellWidth:52}, 6:{cellWidth:46},
-          7:{cellWidth:10,halign:'center'}, 8:{cellWidth:10,halign:'center'},
-          9:{cellWidth:10,halign:'center'}, 10:{cellWidth:10,halign:'center'},
-          11:{cellWidth:10,halign:'center'},12:{cellWidth:10,halign:'center'},
-          13:{cellWidth:13,halign:'center'},14:{cellWidth:20,halign:'center'},
-        },
+        columnStyles,
         didParseCell(d) {
           if (d.section === 'body') {
             const ri = d.row.index;
             if (stationHeaderIndices.has(ri)) {
-              // Stations-Sektionszeile: dunkel, weiß, groß
               d.cell.styles.fillColor = [23, 52, 88];
               d.cell.styles.textColor = [255, 255, 255];
               d.cell.styles.fontStyle = 'bold';
               d.cell.styles.fontSize = 9.5;
               d.cell.styles.minCellHeight = 9;
             } else if (sumRowIndices.has(ri)) {
-              // Summenzeile: Stahlblau, fett
               d.cell.styles.fillColor = [210, 225, 245];
               d.cell.styles.fontStyle = 'bold';
               d.cell.styles.textColor = [20, 50, 100];
             } else {
-              // Datenzeile: sehr subtile Stationsfarbe
               const si = rowStationIndex[ri] % stColors.length;
               d.cell.styles.fillColor = stColors[si];
             }
