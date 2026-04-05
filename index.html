@@ -1630,6 +1630,43 @@
     .katalog-import-row {
       display: flex; gap: 8px; margin-top: 12px;
     }
+    /* ── Katalog Sync ─────────────────────────────────────────── */
+    .katalog-sync-section {
+      margin-top: 14px; padding: 10px 12px;
+      background: var(--bg-2, #f5f5f5); border-radius: 7px;
+      border: 1px solid var(--border, #e0e0e0);
+    }
+    .katalog-sync-label {
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .06em; color: var(--text-3); margin-bottom: 7px;
+    }
+    .katalog-sync-row {
+      display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+    }
+    .katalog-sync-active { color: var(--text-1); }
+    .katalog-sync-name {
+      font-size: 12px; font-weight: 500; overflow: hidden;
+      text-overflow: ellipsis; white-space: nowrap; max-width: 160px;
+    }
+    .katalog-sync-hint { font-size: 11px; color: var(--text-3); }
+    .katalog-sync-info { font-size: 11px; margin-top: 6px; color: var(--text-3); }
+    .katalog-sync-ok   { color: #1a7f37; }
+    .katalog-sync-err  { color: #cf222e; }
+    .btn-xs { font-size: 11px !important; padding: 1px 8px !important; }
+    /* ── Katalog-Sync-Banner (Toolbar) ────────────────────────── */
+    .katalog-sync-banner {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 2000;
+      background: var(--accent, #0078d4); color: #fff;
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      padding: 8px 16px; font-size: 13px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.18);
+    }
+    .katalog-sync-banner button {
+      background: rgba(255,255,255,.22); border: 1px solid rgba(255,255,255,.4);
+      color: #fff; border-radius: 4px; padding: 2px 12px; cursor: pointer;
+      font-size: 12px; font-weight: 600;
+    }
+    .katalog-sync-banner button:hover { background: rgba(255,255,255,.35); }
     /* ── Katalog Meta-Info ────────────────────────────────────── */
     .katalog-meta {
       font-size: 11px; color: var(--text-3); margin-bottom: 8px;
@@ -2849,6 +2886,13 @@
   </div><!-- main -->
 
   <!-- ─────────────── KATALOG SIDE-PANEL ──────────────────── -->
+  <!-- Katalog-Sync Permission Banner -->
+  <div class="katalog-sync-banner" v-if="katalogSyncStatus === 'permission'">
+    <span>Katalog-Ordner verknüpft – Zugriff bestätigen für automatische Aktualisierung</span>
+    <button @click="requestSyncPermission()">Zugriff erlauben</button>
+    <button @click="katalogSyncStatus = null" style="background:transparent;border-color:rgba(255,255,255,.2);font-weight:400">✕</button>
+  </div>
+
   <div class="katalog-backdrop" v-if="showSettings" @click="showSettings=false"></div>
   <transition name="drawer-slide">
     <div class="katalog-drawer" v-if="showSettings">
@@ -2885,6 +2929,33 @@
         <div class="katalog-import-row">
           <button class="btn btn-primary btn-sm" @click="importKatalog()">Importieren</button>
           <button class="btn btn-sm" style="border:1.5px solid var(--border-str)" @click="exportKatalog()">Exportieren</button>
+        </div>
+
+        <!-- Automatische Synchronisation -->
+        <div class="katalog-sync-section">
+          <div class="katalog-sync-label">Automatische Aktualisierung</div>
+          <div v-if="!katalogSyncOrdner" class="katalog-sync-row">
+            <button class="btn btn-sm" style="border:1.5px solid var(--border-str)" @click="verknuepfeKatalogOrdner()">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px">
+                <path d="M2 4h5l2 2h5v8H2z"/>
+              </svg>Ordner verknüpfen
+            </button>
+            <span class="katalog-sync-hint">OneDrive-Sync-Ordner wählen</span>
+          </div>
+          <div v-else class="katalog-sync-row katalog-sync-active">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px">
+              <path d="M2 4h5l2 2h5v8H2z"/>
+            </svg>
+            <span class="katalog-sync-name">{{ katalogSyncOrdner }}</span>
+            <button class="btn btn-sm btn-xs" @click="autoCheckKatalog()" title="Jetzt prüfen" style="margin-left:auto;padding:1px 7px">↻</button>
+            <button class="btn btn-sm btn-xs" @click="entferneKatalogOrdner()" title="Verknüpfung aufheben" style="padding:1px 7px">✕</button>
+          </div>
+          <div v-if="katalogSyncStatus === 'checking'" class="katalog-sync-info">Prüfe auf neue Version…</div>
+          <div v-if="katalogSyncStatus === 'aktuell'" class="katalog-sync-info katalog-sync-ok">{{ katalogSyncMsg }}</div>
+          <div v-if="katalogSyncStatus === 'fehler'" class="katalog-sync-info katalog-sync-err">{{ katalogSyncMsg }}</div>
+          <div v-if="katalogSyncStatus === 'permission'" class="katalog-sync-info">
+            <button class="btn btn-primary btn-sm" style="font-size:11px;padding:2px 10px" @click="requestSyncPermission()">Zugriff erlauben &amp; prüfen</button>
+          </div>
         </div>
 
         <!-- Suchfilter -->
@@ -3108,8 +3179,19 @@ const EXPORT_COLS = [
 ];
 
 const STORAGE_KEY = 'uebergabe_v1';
-const VERSION = '1.6.0';
+const VERSION = '1.7.0';
 const CHANGELOG = [
+  {
+    version: '1.7.0',
+    datum: '05.04.2026',
+    änderungen: [
+      'Automatische Katalog-Aktualisierung: Freigegebenen OneDrive-Ordner einmalig verknüpfen – App prüft beim Start auf neuere Katalogdatei und importiert diese automatisch',
+      'Versionserkennung aus Dateiname (YYYYMMDD_NNNN) oder Meta-Sheet der XLSX-Datei',
+      'Ordner-Verknüpfung wird sicher in IndexedDB gespeichert (File System Access API)',
+      'Permission-Banner bei Neustart des Browsers – Zugriff per Klick erneut bestätigen',
+      'Manueller Prüf-Button (↻) und Verknüpfung-Entfernen (✕) im Katalog-Drawer',
+    ],
+  },
   {
     version: '1.6.0',
     datum: '03.04.2026',
@@ -3199,6 +3281,49 @@ const CHANGELOG = [
   },
 ];
 
+// ── Katalog-Sync: IndexedDB für Directory Handle ─────────────────────────────
+const IDB_NAME = 'uebergabe_store';
+const IDB_STORE = 'handles';
+const IDB_KEY   = 'katalogDir';
+
+function openIDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = e => e.target.result.createObjectStore(IDB_STORE);
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+async function saveDirectoryHandle(handle) {
+  const db = await openIDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).put(handle, IDB_KEY);
+    tx.oncomplete = resolve;
+    tx.onerror    = e => reject(e.target.error);
+  });
+}
+async function loadDirectoryHandle() {
+  try {
+    const db = await openIDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB_STORE, 'readonly');
+      const req = tx.objectStore(IDB_STORE).get(IDB_KEY);
+      req.onsuccess = e => resolve(e.target.result || null);
+      req.onerror   = e => reject(e.target.error);
+    });
+  } catch { return null; }
+}
+async function clearDirectoryHandle() {
+  const db = await openIDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).delete(IDB_KEY);
+    tx.oncomplete = resolve;
+    tx.onerror    = e => reject(e.target.error);
+  });
+}
+
 const app = createApp({
   data() {
     return {
@@ -3238,6 +3363,9 @@ const app = createApp({
       katalogKzError: null,
       structureKzError: null,
       katalogMeta: { dateiname: null, importDatum: null, hash: null, version: null, versionNr: 0, manuellGeändert: false },
+      katalogSyncOrdner: null,      // Name des verknüpften Ordners (nur zur Anzeige)
+      katalogSyncStatus: null,      // null | 'checking' | 'aktuell' | 'update' | 'fehler' | 'permission'
+      katalogSyncMsg: '',           // Meldungstext für Banner
       katalogPromote: null,
       bmkKatalog: {
         station: [],
@@ -4654,6 +4782,187 @@ const app = createApp({
       }
       return base;
     },
+    // ── Katalog-Sync ──────────────────────────────────────────────────────────
+    async verknuepfeKatalogOrdner() {
+      if (!window.showDirectoryPicker) {
+        alert('Dein Browser unterstützt keine Ordner-Verknüpfung (File System Access API).\nBitte nutze einen aktuellen Chrome oder Edge.');
+        return;
+      }
+      try {
+        const handle = await window.showDirectoryPicker({ mode: 'read' });
+        await saveDirectoryHandle(handle);
+        this.katalogSyncOrdner = handle.name;
+        this.katalogSyncStatus = null;
+        this.katalogSyncMsg = '';
+        await this.autoCheckKatalog();
+      } catch(e) { if (e.name !== 'AbortError') console.error(e); }
+    },
+    async entferneKatalogOrdner() {
+      await clearDirectoryHandle();
+      this.katalogSyncOrdner = null;
+      this.katalogSyncStatus = null;
+      this.katalogSyncMsg = '';
+    },
+    _parseVersionFromName(name) {
+      // Format: *_YYYYMMDD_NNNN.xlsx oder *_YYYYMMDD-NNNN.xlsx
+      const m = name.match(/(\d{8})[_-](\d{4})/);
+      if (m) return { version: `${m[1]}-${m[2]}`, versionNr: Number(m[2]) || 0, sortKey: `${m[1]}${m[2]}` };
+      return null;
+    },
+    _compareVersions(a, b) {
+      // Vergleicht zwei Versions-Strings "YYYYMMDD-NNNN"
+      if (!a) return -1;
+      if (!b) return 1;
+      return a.replace('-','').localeCompare(b.replace('-',''));
+    },
+    async autoCheckKatalog() {
+      const dirHandle = await loadDirectoryHandle();
+      if (!dirHandle) return;
+      this.katalogSyncOrdner = dirHandle.name;
+
+      // Browser-Permission prüfen
+      let perm = await dirHandle.queryPermission({ mode: 'read' });
+      if (perm === 'prompt') {
+        this.katalogSyncStatus = 'permission';
+        this.katalogSyncMsg = 'Zugriff auf Katalog-Ordner bestätigen';
+        return;
+      }
+      if (perm !== 'granted') {
+        this.katalogSyncStatus = 'fehler';
+        this.katalogSyncMsg = 'Kein Zugriff auf Katalog-Ordner';
+        return;
+      }
+
+      this.katalogSyncStatus = 'checking';
+      try {
+        // Alle passenden Dateien im Ordner sammeln
+        const candidates = [];
+        for await (const [name, fh] of dirHandle.entries()) {
+          if (fh.kind !== 'file') continue;
+          const lower = name.toLowerCase();
+          if (!(lower.endsWith('.xlsx') || lower.endsWith('.json'))) continue;
+          if (!lower.includes('katalog') && !lower.includes('bmk')) continue;
+          const parsed = this._parseVersionFromName(name);
+          candidates.push({ name, handle: fh, parsed });
+        }
+        if (!candidates.length) {
+          this.katalogSyncStatus = 'fehler';
+          this.katalogSyncMsg = 'Keine Katalog-Datei im Ordner gefunden';
+          return;
+        }
+        // Neueste Datei ermitteln (nach sortKey, dann Dateiname)
+        candidates.sort((a, b) => {
+          if (a.parsed && b.parsed) return b.parsed.sortKey.localeCompare(a.parsed.sortKey);
+          if (a.parsed) return -1;
+          if (b.parsed) return 1;
+          return b.name.localeCompare(a.name);
+        });
+        const newest = candidates[0];
+        const newestVersion = newest.parsed?.version || null;
+
+        // Versionsvergleich
+        if (newestVersion && this.katalogMeta.version &&
+            this._compareVersions(newestVersion, this.katalogMeta.version) <= 0) {
+          this.katalogSyncStatus = 'aktuell';
+          this.katalogSyncMsg = `Katalog ist aktuell (${this.katalogMeta.version})`;
+          return;
+        }
+
+        // Neue Version vorhanden → importieren
+        const file = await newest.handle.getFile();
+        await this._importKatalogFromFile(file);
+        this.katalogSyncStatus = 'aktuell';
+        this.katalogSyncMsg = `✓ Katalog aktualisiert auf ${this.katalogMeta.version || newest.name}`;
+      } catch(e) {
+        console.error('autoCheckKatalog:', e);
+        this.katalogSyncStatus = 'fehler';
+        this.katalogSyncMsg = 'Fehler beim Lesen des Katalog-Ordners';
+      }
+    },
+    async requestSyncPermission() {
+      const dirHandle = await loadDirectoryHandle();
+      if (!dirHandle) return;
+      try {
+        const perm = await dirHandle.requestPermission({ mode: 'read' });
+        if (perm === 'granted') await this.autoCheckKatalog();
+      } catch(e) { console.error(e); }
+    },
+    // Interner Import aus File-Objekt (wird von autoCheckKatalog und importKatalog genutzt)
+    async _importKatalogFromFile(file) {
+      let importedVersion = null, importedVersionNr = 0;
+      if (file.name.endsWith('.json')) {
+        const d = JSON.parse(await file.text());
+        delete d._meta;
+        for (const level of ['station','bauraum','funktionsdefinition','funktion','zustand','stellglied']) {
+          if (Array.isArray(d[level])) this.bmkKatalog[level] = d[level];
+        }
+      } else {
+        const buf = await file.arrayBuffer();
+        const wb = XLSX.read(buf, { type: 'array' });
+        const metaSheet = wb.Sheets['Meta'];
+        if (metaSheet) {
+          const metaRows = XLSX.utils.sheet_to_json(metaSheet, { header: 1 });
+          for (const row of metaRows) {
+            if (row[0] === 'Version') importedVersion = String(row[1]);
+            if (row[0] === 'Versionsnummer') importedVersionNr = Number(row[1]) || 0;
+          }
+        }
+        if (!importedVersion) {
+          const m = file.name.match(/(\d{8})_(\d{4})/);
+          if (m) { importedVersion = `${m[1]}-${m[2]}`; importedVersionNr = Number(m[2]) || 0; }
+        }
+        const sheetMap = {
+          'station':'station','bauraum':'bauraum',
+          'funktionsdefinition':'funktionsdefinition','funktion':'funktion',
+          'zustand':'zustand','stellglied':'stellglied',
+        };
+        let multiSheet = false;
+        for (const sn of wb.SheetNames) { if (sheetMap[sn.toLowerCase()]) { multiSheet = true; break; } }
+        if (multiSheet) {
+          for (const sn of wb.SheetNames) {
+            const level = sheetMap[sn.toLowerCase()];
+            if (!level) continue;
+            const data = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1 });
+            const entries = [];
+            for (let r = 1; r < data.length; r++) {
+              if (!data[r]) continue;
+              const kz = (data[r][0] || '').toString().trim();
+              const lt = (data[r][1] || '').toString().trim();
+              if (kz && lt && !entries.some(e => e.kuerzel === kz)) entries.push({ kuerzel: kz, langtext: lt });
+            }
+            if (entries.length) this.bmkKatalog[level] = entries;
+          }
+        } else {
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
+          const mapping = [
+            { level: 'station', kzCol: 1, ltCol: 2 },
+            { level: 'bauraum', kzCol: 3, ltCol: 4 },
+            { level: 'funktionsdefinition', kzCol: 5, ltCol: 6 },
+            { level: 'funktion', kzCol: 7, ltCol: 8 },
+          ];
+          for (const m of mapping) {
+            const entries = [];
+            for (let r = 5; r < data.length; r++) {
+              if (!data[r]) continue;
+              const kz = (data[r][m.kzCol] || '').toString().trim();
+              const lt = (data[r][m.ltCol] || '').toString().trim();
+              if (kz && lt && !entries.some(e => e.kuerzel === kz)) entries.push({ kuerzel: kz, langtext: lt });
+            }
+            if (entries.length) this.bmkKatalog[m.level] = entries;
+          }
+        }
+      }
+      this.katalogMeta = {
+        dateiname: file.name,
+        importDatum: new Date().toISOString(),
+        hash: this.computeKatalogHash(),
+        version: importedVersion,
+        versionNr: importedVersionNr,
+        manuellGeändert: false,
+      };
+    },
+
     computeKatalogHash() {
       const str = JSON.stringify(this.bmkKatalog, Object.keys(this.bmkKatalog).sort());
       let h = 0x811c9dc5;
@@ -4687,89 +4996,7 @@ const app = createApp({
         });
         if (!file) return;
       }
-
-      let importedVersion = null, importedVersionNr = 0;
-      if (file.name.endsWith('.json')) {
-        const d = JSON.parse(await file.text());
-        delete d._meta;
-        for (const level of ['station','bauraum','funktionsdefinition','funktion','zustand','stellglied']) {
-          if (Array.isArray(d[level])) this.bmkKatalog[level] = d[level];
-        }
-      } else {
-        const buf = await file.arrayBuffer();
-        const wb = XLSX.read(buf, { type: 'array' });
-
-        // Version aus Meta-Sheet lesen
-        const metaSheet = wb.Sheets['Meta'];
-        if (metaSheet) {
-          const metaRows = XLSX.utils.sheet_to_json(metaSheet, { header: 1 });
-          for (const row of metaRows) {
-            if (row[0] === 'Version') importedVersion = String(row[1]);
-            if (row[0] === 'Versionsnummer') importedVersionNr = Number(row[1]) || 0;
-          }
-        }
-        // Fallback: Version aus Dateiname parsen (z.B. BMK-Katalog_20260402_0001.xlsx)
-        if (!importedVersion) {
-          const m = file.name.match(/(\d{8})_(\d{4})/);
-          if (m) { importedVersion = `${m[1]}-${m[2]}`; importedVersionNr = Number(m[2]) || 0; }
-        }
-
-        const sheetMap = {
-          'station': 'station', 'bauraum': 'bauraum',
-          'funktionsdefinition': 'funktionsdefinition', 'funktion': 'funktion',
-          'zustand': 'zustand', 'stellglied': 'stellglied',
-        };
-        let multiSheet = false;
-        for (const sn of wb.SheetNames) {
-          if (sheetMap[sn.toLowerCase()]) { multiSheet = true; break; }
-        }
-        if (multiSheet) {
-          for (const sn of wb.SheetNames) {
-            const level = sheetMap[sn.toLowerCase()];
-            if (!level) continue;
-            const data = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1 });
-            const entries = [];
-            for (let r = 1; r < data.length; r++) {
-              if (!data[r]) continue;
-              const kz = (data[r][0] || '').toString().trim();
-              const lt = (data[r][1] || '').toString().trim();
-              if (kz && lt && !entries.some(e => e.kuerzel === kz)) {
-                entries.push({ kuerzel: kz, langtext: lt });
-              }
-            }
-            if (entries.length) this.bmkKatalog[level] = entries;
-          }
-        } else {
-          const ws = wb.Sheets[wb.SheetNames[0]];
-          const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
-          const mapping = [
-            { level: 'station', kzCol: 1, ltCol: 2 },
-            { level: 'bauraum', kzCol: 3, ltCol: 4 },
-            { level: 'funktionsdefinition', kzCol: 5, ltCol: 6 },
-            { level: 'funktion', kzCol: 7, ltCol: 8 },
-          ];
-          for (const m of mapping) {
-            const entries = [];
-            for (let r = 5; r < data.length; r++) {
-              if (!data[r]) continue;
-              const kz = (data[r][m.kzCol] || '').toString().trim();
-              const lt = (data[r][m.ltCol] || '').toString().trim();
-              if (kz && lt && !entries.some(e => e.kuerzel === kz)) {
-                entries.push({ kuerzel: kz, langtext: lt });
-              }
-            }
-            if (entries.length) this.bmkKatalog[m.level] = entries;
-          }
-        }
-      }
-      this.katalogMeta = {
-        dateiname: file.name,
-        importDatum: new Date().toISOString(),
-        hash: this.computeKatalogHash(),
-        version: importedVersion,
-        versionNr: importedVersionNr,
-        manuellGeändert: false,
-      };
+      await this._importKatalogFromFile(file);
       this.savedMsg = '✓ Katalog importiert';
       clearTimeout(this._saveTimer);
       this._saveTimer = setTimeout(() => { this.savedMsg = ''; }, 2500);
@@ -4883,6 +5110,7 @@ const app = createApp({
 
   mounted() {
     this.loadLS();
+    this.autoCheckKatalog();
     const seenVersion = localStorage.getItem('uebergabe_seen_version');
     if (seenVersion !== VERSION) { this.showChangelog = true; this.changelogShowAll = false; }
     // Restore saved sidebar width
