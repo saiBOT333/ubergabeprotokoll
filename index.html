@@ -2175,7 +2175,7 @@
                        @blur="saveEdit(b)" @keyup.enter="saveEdit(b)" @keyup.escape="cancelEdit"
                        @click.stop @dblclick.stop />
                 <span v-else class="tn-lbl">{{ b.name }}</span>
-                <span class="tn-bmk" v-if="s.kuerzel || b.kuerzel">[{{ [s.kuerzel, b.kuerzel].filter(Boolean).join('-') }}]</span>
+                <span class="tn-bmk" v-if="s.kuerzel || b.kuerzel">[{{ [s.kuerzel, b.kuerzel].filter(Boolean).join('_') }}]</span>
                 <div class="tn-acts">
                   <button class="tn-btn tn-btn-add" @click.stop="addFunkDef(si,bi)" title="Funktionsdefinition hinzufügen">+</button>
                   <button class="tn-btn tn-btn-cpy" @click.stop="copyBauraum(si,bi)" title="Bauraum kopieren"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><path d="M8 4V2a1 1 0 00-1-1H2a1 1 0 00-1 1v5a1 1 0 001 1h2"/></svg></button>
@@ -2217,7 +2217,7 @@
                            @blur="saveEdit(fd)" @keyup.enter="saveEdit(fd)" @keyup.escape="cancelEdit"
                            @click.stop @dblclick.stop />
                     <span v-else class="tn-lbl">{{ fd.name }}</span>
-                    <span class="tn-bmk" v-if="s.kuerzel || b.kuerzel || fd.kuerzel">[{{ [s.kuerzel, b.kuerzel, fd.kuerzel].filter(Boolean).join('-') }}]</span>
+                    <span class="tn-bmk" v-if="s.kuerzel || b.kuerzel || fd.kuerzel">[{{ [s.kuerzel, b.kuerzel, fd.kuerzel].filter(Boolean).join('_') }}]</span>
                     <div class="tn-acts">
                       <button class="tn-btn tn-btn-add" @click.stop="addFunktion(si,bi,fdi)" title="Funktion hinzufügen">+</button>
                       <button class="tn-btn tn-btn-cpy" @click.stop="copyFunkDef(si,bi,fdi)" title="Funktionsdefinition kopieren"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><path d="M8 4V2a1 1 0 00-1-1H2a1 1 0 00-1 1v5a1 1 0 001 1h2"/></svg></button>
@@ -2259,7 +2259,7 @@
                                @blur="saveEdit(f)" @keyup.enter="saveEdit(f)" @keyup.escape="cancelEdit"
                                @click.stop @dblclick.stop />
                         <span v-else class="tn-lbl">{{ f.name }}</span>
-                        <span class="tn-bmk" v-if="s.kuerzel || b.kuerzel || fd.kuerzel || f.kuerzel">[{{ [s.kuerzel, b.kuerzel, fd.kuerzel, f.kuerzel].filter(Boolean).join('-') }}]</span>
+                        <span class="tn-bmk" v-if="s.kuerzel || b.kuerzel || fd.kuerzel || f.kuerzel">[{{ [s.kuerzel, b.kuerzel, fd.kuerzel, f.kuerzel].filter(Boolean).join('_') }}]</span>
                         <div class="tn-acts">
                           <button class="tn-btn tn-btn-add" @click.stop="addZustand(si,bi,fdi,fi)" title="Zustand hinzufügen">+</button>
                           <button class="tn-btn tn-btn-cpy" @click.stop="copyFunktion(si,bi,fdi,fi)" title="Funktion kopieren"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><path d="M8 4V2a1 1 0 00-1-1H2a1 1 0 00-1 1v5a1 1 0 001 1h2"/></svg></button>
@@ -2297,6 +2297,7 @@
                                  @blur="saveEdit(z)" @keyup.enter="saveEdit(z)" @keyup.escape="cancelEdit"
                                  @click.stop @dblclick.stop />
                           <span v-else class="tn-lbl">{{ z.name }}</span>
+                          <span class="tn-bmk" v-if="s.kuerzel || b.kuerzel || fd.kuerzel || f.kuerzel || z.name">[{{ [s.kuerzel, b.kuerzel, fd.kuerzel, f.kuerzel].filter(Boolean).join('_') + (z.name ? '_' + z.name : '') }}]</span>
                           <div class="tn-acts">
                             <button class="tn-btn tn-btn-cpy" @click.stop="copyZustand(si,bi,fdi,fi,zi)" title="Zustand kopieren"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><path d="M8 4V2a1 1 0 00-1-1H2a1 1 0 00-1 1v5a1 1 0 001 1h2"/></svg></button>
                             <button class="tn-btn tn-btn-del" @mousedown.stop.prevent="startHold($event, () => delZustand(si,bi,fdi,fi,zi))" @mouseup.stop="cancelHold()" @mouseleave="cancelHold()" title="Gedrückt halten zum Löschen">×</button>
@@ -3442,8 +3443,9 @@ const app = createApp({
       if (this.curBauraum)  parts.push(this.curBauraum.kuerzel  || this.curBauraum.name);
       if (this.curFunkDef)  parts.push(this.curFunkDef.kuerzel  || this.curFunkDef.name);
       if (this.curFunktion) parts.push(this.curFunktion.kuerzel || this.curFunktion.name);
+      if (this.curZustand) parts.push(this.curZustand.name);
       const filtered = parts.filter(Boolean);
-      return filtered.length ? filtered.join('-') : '';
+      return filtered.length ? filtered.join('_') : '';
     },
     stationSummen() {
       return this.stationen.map(s => {
@@ -4233,7 +4235,7 @@ const app = createApp({
             for (const f of fd.funktionen)
               for (const z of f.zustände)
                 rows.push({
-                  BMK: [s.kuerzel, b.kuerzel, fd.kuerzel, f.kuerzel].filter(Boolean).join('-') || '',
+                  BMK: ([s.kuerzel, b.kuerzel, fd.kuerzel, f.kuerzel].filter(Boolean).join('_') + (z.name ? '_' + z.name : '')) || '',
                   Station: s.name, Bauraum: b.name,
                   Funktionsdefinition: fd.name, Funktion: f.name,
                   Zustand: z.name, Stellglied: z.stellglied, Bemerkungen: z.bemerkungen,
