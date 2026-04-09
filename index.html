@@ -2406,6 +2406,7 @@
             <table class="ft-table">
               <thead>
                 <tr>
+                  <th>Code</th>
                   <th><span class="ft-th-dot" style="background:var(--lv0)"></span>Station</th>
                   <th><span class="ft-th-dot" style="background:var(--lv1)"></span>Bauraum</th>
                   <th><span class="ft-th-dot" style="background:var(--lv2)"></span>FD</th>
@@ -2427,6 +2428,7 @@
                       'ft-row-dimmed':       focusedSet && !focusedSet.has(row.z),
                       'ft-row-focused':      focusedSet &&  focusedSet.has(row.z),
                     }">
+                  <td class="ft-cell-ro" style="font-family:monospace;font-size:0.78em;white-space:nowrap;color:var(--muted)">{{ [row.s.kuerzel, row.b.kuerzel, row.fd.kuerzel, row.f.kuerzel].filter(Boolean).join('_') + (row.z.name ? '_' + row.z.name : '') }}</td>
                   <td class="ft-cell-ro ft-cell-lv0" v-if="!mergeMap || mergeMap[ri].s !== 0"
                       :rowspan="mergeMap ? mergeMap[ri].s : 1"
                       :class="{ 'ft-cell-merged': mergeMap && mergeMap[ri].s > 1, 'ft-cell-focused': ftFocus && ftFocus.obj === row.s, 'ft-cell-ancestor-vis': ancestorVisCells && ancestorVisCells[ri] && ancestorVisCells[ri].has('s') }"
