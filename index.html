@@ -976,6 +976,15 @@
       border-right: 1px solid var(--border-sub);
     }
     .ft-cell-ro  { color: var(--text-2); font-size: 11px; white-space: nowrap; }
+    .ft-th-check, .ft-cell-check {
+      width: 32px; padding: 3px 6px; text-align: center;
+    }
+    .ft-check {
+      width: 15px; height: 15px; cursor: pointer; margin: 0;
+      accent-color: var(--blue);
+    }
+    .ft-table tbody tr:has(.ft-check:checked) td { background: #e8f5e8 !important; }
+    .ft-table tbody tr:has(.ft-check:checked) td.ft-cell-ro { color: var(--muted); text-decoration: line-through; }
     .ft-cell-merged {
       vertical-align: top; font-weight: 600; color: var(--text);
       border-bottom: 2px solid var(--border-str);
@@ -1264,12 +1273,23 @@
       color: var(--text-3); padding: 3px 4px;
       border-radius: var(--r-sm);
       font-size: 13px; line-height: 1;
-      transition: background var(--trans), color var(--trans);
+      transition: background-color var(--trans), color var(--trans);
       opacity: 0;
     }
     .katalog-table-row:hover .katalog-row-btn { opacity: 1; }
-    .katalog-row-btn:hover { background: var(--hover); color: var(--text); }
+    .katalog-row-btn:hover { background-color: var(--hover); color: var(--text); }
+    .katalog-row-del {
+      background-image: linear-gradient(to right, #a4262c 0%, #a4262c 100%);
+      background-size: 0% 100%;
+      background-repeat: no-repeat;
+      transition: background-size 0s, background-color var(--trans), color var(--trans);
+    }
     .katalog-row-del:hover { color: var(--red, #c0392b); }
+    .katalog-row-del.holding {
+      background-size: 100% 100%;
+      transition: background-size 0.9s linear, color 0s;
+      color: #fff !important;
+    }
     .modal-hdr {
       padding: 20px 22px 16px;
       border-bottom: 1px solid var(--border);
@@ -2406,6 +2426,12 @@
             <table class="ft-table">
               <thead>
                 <tr>
+                  <th class="ft-th-check" :title="allChecked ? 'Alle abwählen' : 'Alle auswählen'">
+                    <input type="checkbox" class="ft-check"
+                           :checked="allChecked"
+                           :indeterminate.prop="someChecked && !allChecked"
+                           @change="toggleAllChecked" />
+                  </th>
                   <th>Code</th>
                   <th><span class="ft-th-dot" style="background:var(--lv0)"></span>Station</th>
                   <th><span class="ft-th-dot" style="background:var(--lv1)"></span>Bauraum</th>
@@ -2428,6 +2454,9 @@
                       'ft-row-dimmed':       focusedSet && !focusedSet.has(row.z),
                       'ft-row-focused':      focusedSet &&  focusedSet.has(row.z),
                     }">
+                  <td class="ft-cell-check" @click.stop>
+                    <input type="checkbox" class="ft-check" v-model="row.z.checked" />
+                  </td>
                   <td class="ft-cell-ro" style="font-family:monospace;font-size:0.78em;white-space:nowrap;color:var(--muted)">{{ [row.s.kuerzel, row.b.kuerzel, row.fd.kuerzel, row.f.kuerzel].filter(Boolean).join('_') + (row.z.name ? '_' + row.z.name : '') }}</td>
                   <td class="ft-cell-ro ft-cell-lv0" v-if="!mergeMap || mergeMap[ri].s !== 0"
                       :rowspan="mergeMap ? mergeMap[ri].s : 1"
@@ -3017,7 +3046,7 @@
                           <path d="M8.5 1.5l2 2L3 11H1v-2L8.5 1.5z"/>
                         </svg>
                       </button>
-                      <button class="katalog-row-btn katalog-row-del" @click.stop="delKatalog(levelKey, katalogRealIdx(levelKey, entry))" title="Löschen">×</button>
+                      <button class="katalog-row-btn katalog-row-del" @mousedown.stop.prevent="startHold($event, () => delKatalog(levelKey, katalogRealIdx(levelKey, entry)))" @mouseup.stop="cancelHold()" @mouseleave="cancelHold()" title="Gedrückt halten zum Löschen">×</button>
                     </td>
                   </tr>
                 </template>
@@ -3148,7 +3177,7 @@ function mkBauraum(name = 'Neuer Bauraum', kuerzel = '')          { return { id:
 function mkFunkDef(name = 'Neue Funktionsdefinition', kuerzel = '') { return { id: uid(), name, kuerzel, funktionen: [] }; }
 function mkFunktion(name = 'Neue Funktion', kuerzel = '')         { return { id: uid(), name, kuerzel, zustände: [] }; }
 function mkZustand(name = 'Neuer Zustand') {
-  return { id: uid(), name, stellglied: '', bemerkungen: '',
+  return { id: uid(), name, stellglied: '', bemerkungen: '', checked: false,
            DI: '', DO: '', SDI: '', SDO: '', AI: '', AO: '', Sonstige: '', Feldbus: '' };
 }
 
@@ -3164,6 +3193,7 @@ const EA_FIELDS = [
 ];
 
 const EXPORT_COLS = [
+  { key:'checked',     label:'Erledigt',      pdfLabel:'Erl.',             group:null,        excelKey:'chk', excelWidth:10, pdfWidth:12 },
   { key:'bmk',         label:'BMK',          pdfLabel:'BMK',              group:null,        excelKey:'bmk', excelWidth:18, pdfWidth:22 },
   { key:'bauraum',     label:'Bauraum',       pdfLabel:'Bauraum',          group:null,        excelKey:'a',   excelWidth:28, pdfWidth:28 },
   { key:'fd',          label:'Funk.-Def.',    pdfLabel:'Funk.-\nDefinition',group:null,       excelKey:'b',   excelWidth:28, pdfWidth:28 },
@@ -3182,8 +3212,20 @@ const EXPORT_COLS = [
 ];
 
 const STORAGE_KEY = 'uebergabe_v1';
-const VERSION = '1.7.0';
+const VERSION = '1.9.0';
 const CHANGELOG = [
+  {
+    version: '1.9.0',
+    datum: '23.04.2026',
+    änderungen: [
+      'Checkbox-Spalte in der Vollbild-Tabellenansicht – Zustände direkt abhaken (z.B. zur Übergabe-Kontrolle)',
+      'Kopf-Checkbox mit Sammel-Aktion „Alle auswählen/abwählen" inkl. Indeterminate-Status',
+      'Abgehakte Zeilen werden grün hinterlegt, der Code-Eintrag durchgestrichen dargestellt',
+      'Abhak-Status wird pro Zustand gespeichert und bleibt nach Neuladen/Projektwechsel erhalten',
+      'Neue Exportspalte „Erledigt" – im Modal „Exportspalten konfigurieren" aktivierbar (Excel & PDF)',
+      'Im Export erscheint für abgehakte Zeilen ein „X", für offene Zeilen bleibt die Zelle leer',
+    ],
+  },
   {
     version: '1.7.0',
     datum: '05.04.2026',
@@ -3355,7 +3397,7 @@ const app = createApp({
       showSaveMenu: false,
       showExportMenu: false,
       showExportColModal: false,
-      hiddenExportCols: [],
+      hiddenExportCols: ['checked'],
       legendOpen: true,
       bmkCopied: false,
       katalogOpenLevel: 'station',
@@ -3554,6 +3596,14 @@ const app = createApp({
         rows = rows.filter(r => this.stationen[this.ftStationIdx].bauräume.indexOf(r.b) === this.ftBauraumIdx);
       return rows;
     },
+    /* Checkbox-Status für Kopf-Checkbox */
+    allChecked() {
+      const rows = this.filteredZustaende;
+      return rows.length > 0 && rows.every(r => r.z.checked);
+    },
+    someChecked() {
+      return this.filteredZustaende.some(r => r.z.checked);
+    },
     /* Gruppen-Grenzen für jede Zeile – unabhängig vom Merge-Modus */
     rowGroups() {
       const rows = this.filteredZustaende;
@@ -3724,10 +3774,10 @@ const app = createApp({
     deepClone(node, clearKuerzel = false) {
       const c = { ...node, id: uid() };
       if (clearKuerzel && c.kuerzel !== undefined) c.kuerzel = '';
-      if (c.bauräume)              c.bauräume = c.bauräume.map(b => this.deepClone(b, clearKuerzel));
-      if (c.funktionsdefinitionen) c.funktionsdefinitionen = c.funktionsdefinitionen.map(fd => this.deepClone(fd, clearKuerzel));
-      if (c.funktionen)            c.funktionen = c.funktionen.map(f => this.deepClone(f, clearKuerzel));
-      if (c.zustände)              c.zustände = c.zustände.map(z => this.deepClone(z, clearKuerzel));
+      if (c.bauräume)              c.bauräume = c.bauräume.map(b => this.deepClone(b, false));
+      if (c.funktionsdefinitionen) c.funktionsdefinitionen = c.funktionsdefinitionen.map(fd => this.deepClone(fd, false));
+      if (c.funktionen)            c.funktionen = c.funktionen.map(f => this.deepClone(f, false));
+      if (c.zustände)              c.zustände = c.zustände.map(z => this.deepClone(z, false));
       return c;
     },
 
@@ -3838,6 +3888,10 @@ const app = createApp({
         this.ftFocus = null;
       else
         this.ftFocus = { level, obj };
+    },
+    toggleAllChecked(e) {
+      const val = !!e.target.checked;
+      for (const row of this.filteredZustaende) row.z.checked = val;
     },
     copyBmk() {
       if (!this.bmkCode) return;
@@ -4237,6 +4291,7 @@ const app = createApp({
             for (const f of fd.funktionen)
               for (const z of f.zustände)
                 rows.push({
+                  Checked: z.checked ? 'X' : '',
                   BMK: ([s.kuerzel, b.kuerzel, fd.kuerzel, f.kuerzel].filter(Boolean).join('_') + (z.name ? '_' + z.name : '')) || '',
                   Station: s.name, Bauraum: b.name,
                   Funktionsdefinition: fd.name, Funktion: f.name,
@@ -4308,6 +4363,7 @@ const app = createApp({
 
       // Hilfsfunktion: Zeilenwerte für sichtbare Spalten
       const rowValues = (r) => visCols.map(c => {
+        if (c.key === 'checked')     return r.Checked || '';
         if (c.key === 'bmk')         return r.BMK || '';
         if (c.key === 'bauraum')     return r.Bauraum;
         if (c.key === 'fd')          return r.Funktionsdefinition;
@@ -4448,6 +4504,7 @@ const app = createApp({
 
       // ── Hilfsfunktion: Zeilenwerte für sichtbare Spalten ────────
       const pdfRowValues = (r) => visCols.map(c => {
+        if (c.key === 'checked')     return r.Checked || '';
         if (c.key === 'bmk')         return r.BMK || '';
         if (c.key === 'bauraum')     return r.Bauraum;
         if (c.key === 'fd')          return r.Funktionsdefinition;
@@ -5050,10 +5107,10 @@ const app = createApp({
         { key: 'funktionsdefinition', children: 'funktionen' },
         { key: 'funktion', children: 'zustände' },
       ];
-      const usedKz = new Set();
       const walk = (nodes, depth) => {
         if (!nodes || depth >= levels.length) return;
         const lvl = levels[depth];
+        const usedKz = new Set();
         for (const node of nodes) {
           if (node.kuerzel === undefined) node.kuerzel = '';
           if (!node.kuerzel) {
