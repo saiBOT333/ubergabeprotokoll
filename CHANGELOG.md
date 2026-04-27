@@ -1,5 +1,24 @@
 # Changelog
 
+## v1.10.0 – 2026-04-27
+
+### Geändert
+- **Katalog-Export folgt dem verknüpften Ordner**: Ist ein Katalog-Ordner verknüpft, wird der Export direkt dort abgelegt statt im Download-Verzeichnis. Ohne Verknüpfung bleibt der klassische Download.
+- **Ordner-Verknüpfung verlangt jetzt Schreibrechte** (`readwrite`) – damit der Export in den Ordner schreiben kann. Bestehende Verknüpfungen werden beim ersten Export einmalig hochgestuft.
+- **Kein stiller Auto-Import mehr**: Findet die App beim „Prüfen" (↻) eine neuere Katalog-Version im verknüpften Ordner, erscheint ein deutlicher Hinweis-Block „Neue Version verfügbar" mit Button „Jetzt importieren". Erst der Klick darauf übernimmt die Datei.
+
+## v1.9.0 – 2026-04-23
+
+### Neu
+- **Checkbox-Spalte in der Vollbild-Tabellenansicht**: Zustände direkt abhaken (z.B. zur Übergabe-Kontrolle)
+- **Kopf-Checkbox** mit Sammel-Aktion „Alle auswählen/abwählen" inkl. Indeterminate-Status
+- **Neue Exportspalte „Erledigt"** – im Modal „Exportspalten konfigurieren" aktivierbar (Excel & PDF)
+
+### Geändert
+- Abgehakte Zeilen werden grün hinterlegt, der Code-Eintrag durchgestrichen dargestellt
+- Abhak-Status wird pro Zustand gespeichert und bleibt nach Neuladen/Projektwechsel erhalten
+- Im Export erscheint für abgehakte Zeilen ein „X", für offene Zeilen bleibt die Zelle leer
+
 ## v1.8.0 – 2026-04-09
 
 ### Geändert

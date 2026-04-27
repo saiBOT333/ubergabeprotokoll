@@ -1672,6 +1672,20 @@
     .katalog-sync-info { font-size: 11px; margin-top: 6px; color: var(--text-3); }
     .katalog-sync-ok   { color: #1a7f37; }
     .katalog-sync-err  { color: #cf222e; }
+    .katalog-sync-update {
+      margin-top: 8px;
+      padding: 8px 10px;
+      border: 1.5px solid #e67700;
+      background: #fff8e6;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+    }
+    .katalog-sync-update-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .katalog-sync-update-text strong { color: #b35200; }
+    .katalog-sync-update-text span   { color: var(--text-2); font-size: 11px; }
     .btn-xs { font-size: 11px !important; padding: 1px 8px !important; }
     /* ── Katalog-Sync-Banner (Toolbar) ────────────────────────── */
     .katalog-sync-banner {
@@ -2988,6 +3002,13 @@
           <div v-if="katalogSyncStatus === 'permission'" class="katalog-sync-info">
             <button class="btn btn-primary btn-sm" style="font-size:11px;padding:2px 10px" @click="requestSyncPermission()">Zugriff erlauben &amp; prüfen</button>
           </div>
+          <div v-if="katalogSyncStatus === 'update'" class="katalog-sync-update">
+            <div class="katalog-sync-update-text">
+              <strong>Neue Version verfügbar</strong>
+              <span>{{ katalogUpdate && katalogUpdate.version }}</span>
+            </div>
+            <button class="btn btn-primary btn-sm" style="font-size:11px;padding:2px 10px" @click="applyKatalogUpdate()">Jetzt importieren</button>
+          </div>
         </div>
 
         <!-- Suchfilter -->
@@ -3212,8 +3233,18 @@ const EXPORT_COLS = [
 ];
 
 const STORAGE_KEY = 'uebergabe_v1';
-const VERSION = '1.9.0';
+const VERSION = '1.10.0';
 const CHANGELOG = [
+  {
+    version: '1.10.0',
+    datum: '27.04.2026',
+    änderungen: [
+      'Katalog-Export landet bei verknüpftem Ordner direkt dort statt im Download-Verzeichnis',
+      'Ohne verknüpften Ordner bleibt der bisherige Download-Pfad unverändert',
+      'Ordner-Verknüpfung verlangt jetzt Schreibrechte (readwrite); Bestandshandles werden beim ersten Export einmalig hochgestuft',
+      'Kein stiller Auto-Import mehr: Beim „Prüfen" (↻) erscheint bei neuerer Version im Ordner ein deutlicher Hinweis „Neue Version verfügbar" mit Button „Jetzt importieren"',
+    ],
+  },
   {
     version: '1.9.0',
     datum: '23.04.2026',
@@ -3411,6 +3442,7 @@ const app = createApp({
       katalogSyncOrdner: null,      // Name des verknüpften Ordners (nur zur Anzeige)
       katalogSyncStatus: null,      // null | 'checking' | 'aktuell' | 'update' | 'fehler' | 'permission'
       katalogSyncMsg: '',           // Meldungstext für Banner
+      katalogUpdate: null,          // { handle, name, version } – wenn neuere Version im Ordner gefunden
       katalogPromote: null,
       bmkKatalog: {
         station: [],
@@ -4850,7 +4882,7 @@ const app = createApp({
         return;
       }
       try {
-        const handle = await window.showDirectoryPicker({ mode: 'read' });
+        const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
         await saveDirectoryHandle(handle);
         this.katalogSyncOrdner = handle.name;
         this.katalogSyncStatus = null;
@@ -4881,8 +4913,8 @@ const app = createApp({
       if (!dirHandle) return;
       this.katalogSyncOrdner = dirHandle.name;
 
-      // Browser-Permission prüfen
-      let perm = await dirHandle.queryPermission({ mode: 'read' });
+      // Browser-Permission prüfen (readwrite, damit Export in den Ordner schreiben kann)
+      let perm = await dirHandle.queryPermission({ mode: 'readwrite' });
       if (perm === 'prompt') {
         this.katalogSyncStatus = 'permission';
         this.katalogSyncMsg = 'Zugriff auf Katalog-Ordner bestätigen';
@@ -4926,14 +4958,18 @@ const app = createApp({
             this._compareVersions(newestVersion, this.katalogMeta.version) <= 0) {
           this.katalogSyncStatus = 'aktuell';
           this.katalogSyncMsg = `Katalog ist aktuell (${this.katalogMeta.version})`;
+          this.katalogUpdate = null;
           return;
         }
 
-        // Neue Version vorhanden → importieren
-        const file = await newest.handle.getFile();
-        await this._importKatalogFromFile(file);
-        this.katalogSyncStatus = 'aktuell';
-        this.katalogSyncMsg = `✓ Katalog aktualisiert auf ${this.katalogMeta.version || newest.name}`;
+        // Neue Version vorhanden → Hinweis anzeigen, NICHT auto-importieren
+        this.katalogUpdate = {
+          handle: newest.handle,
+          name: newest.name,
+          version: newestVersion || newest.name,
+        };
+        this.katalogSyncStatus = 'update';
+        this.katalogSyncMsg = `Neue Version verfügbar: ${newestVersion || newest.name}`;
       } catch(e) {
         console.error('autoCheckKatalog:', e);
         this.katalogSyncStatus = 'fehler';
@@ -4944,9 +4980,23 @@ const app = createApp({
       const dirHandle = await loadDirectoryHandle();
       if (!dirHandle) return;
       try {
-        const perm = await dirHandle.requestPermission({ mode: 'read' });
+        const perm = await dirHandle.requestPermission({ mode: 'readwrite' });
         if (perm === 'granted') await this.autoCheckKatalog();
       } catch(e) { console.error(e); }
+    },
+    async applyKatalogUpdate() {
+      if (!this.katalogUpdate || !this.katalogUpdate.handle) return;
+      try {
+        const file = await this.katalogUpdate.handle.getFile();
+        await this._importKatalogFromFile(file);
+        this.katalogSyncStatus = 'aktuell';
+        this.katalogSyncMsg = `✓ Katalog aktualisiert auf ${this.katalogMeta.version || this.katalogUpdate.name}`;
+        this.katalogUpdate = null;
+      } catch (e) {
+        console.error('applyKatalogUpdate:', e);
+        this.katalogSyncStatus = 'fehler';
+        this.katalogSyncMsg = 'Import der neuen Version fehlgeschlagen';
+      }
     },
     // Interner Import aus File-Objekt (wird von autoCheckKatalog und importKatalog genutzt)
     async _importKatalogFromFile(file) {
@@ -5063,7 +5113,7 @@ const app = createApp({
       this._saveTimer = setTimeout(() => { this.savedMsg = ''; }, 2500);
     },
 
-    exportKatalog() {
+    async exportKatalog() {
       const now = new Date();
       const dateStr = now.getFullYear().toString()
         + String(now.getMonth() + 1).padStart(2, '0')
@@ -5093,11 +5143,37 @@ const app = createApp({
 
       const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
       const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const fileName = `BMK-Katalog_${dateStr}_${nrStr}.xlsx`;
 
       this.katalogMeta.version = version;
       this.katalogMeta.versionNr = nextNr;
 
-      this._dl(blob, `BMK-Katalog_${dateStr}_${nrStr}.xlsx`);
+      // Wenn Ordner verknüpft ist und Schreibrechte vorhanden → direkt dort ablegen
+      const dirHandle = await loadDirectoryHandle();
+      if (dirHandle) {
+        try {
+          let perm = await dirHandle.queryPermission({ mode: 'readwrite' });
+          if (perm !== 'granted') {
+            perm = await dirHandle.requestPermission({ mode: 'readwrite' });
+          }
+          if (perm === 'granted') {
+            const fh = await dirHandle.getFileHandle(fileName, { create: true });
+            const writable = await fh.createWritable();
+            await writable.write(blob);
+            await writable.close();
+            this.katalogSyncStatus = 'aktuell';
+            this.katalogSyncMsg = `✓ Exportiert in Ordner „${dirHandle.name}" (${fileName})`;
+            return;
+          }
+        } catch (e) {
+          console.error('exportKatalog → Ordner-Schreibvorgang fehlgeschlagen:', e);
+          this.katalogSyncStatus = 'fehler';
+          this.katalogSyncMsg = 'Schreiben in verknüpften Ordner fehlgeschlagen – Datei wird heruntergeladen';
+        }
+      }
+
+      // Fallback / Standardpfad: klassischer Download
+      this._dl(blob, fileName);
     },
 
     _migrateKuerzel() {
