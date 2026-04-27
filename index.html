@@ -3233,8 +3233,18 @@ const EXPORT_COLS = [
 ];
 
 const STORAGE_KEY = 'uebergabe_v1';
-const VERSION = '1.9.0';
+const VERSION = '1.10.0';
 const CHANGELOG = [
+  {
+    version: '1.10.0',
+    datum: '27.04.2026',
+    änderungen: [
+      'Katalog-Export landet bei verknüpftem Ordner direkt dort statt im Download-Verzeichnis',
+      'Ohne verknüpften Ordner bleibt der bisherige Download-Pfad unverändert',
+      'Ordner-Verknüpfung verlangt jetzt Schreibrechte (readwrite); Bestandshandles werden beim ersten Export einmalig hochgestuft',
+      'Kein stiller Auto-Import mehr: Beim „Prüfen" (↻) erscheint bei neuerer Version im Ordner ein deutlicher Hinweis „Neue Version verfügbar" mit Button „Jetzt importieren"',
+    ],
+  },
   {
     version: '1.9.0',
     datum: '23.04.2026',
