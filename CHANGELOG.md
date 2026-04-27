@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.11.0 – 2026-04-27
+
+### Neu
+- **Export-Hinweis-Block im Katalog-Drawer**: Sobald der Katalog lokal geändert wurde und ein Ordner verknüpft ist, erscheint der Block „Lokale Änderungen vorhanden" mit Button „Jetzt exportieren" – Pendant zum Import-Hinweis.
+
+### Geändert
+- Persistenter **„Exportieren"-Button** öffnet jetzt einen **„Speichern unter…"-Dialog** (`showSaveFilePicker`) mit freier Pfad- und Namenswahl – ideal für Backups oder ad-hoc Sicherungen.
+- Persistenter Button optisch dezent (gestrichelter Rahmen, sekundärer Stil), damit der Block-Hinweis die primäre Aktion bleibt.
+- Nach erfolgreichem Export wird `katalogMeta.manuellGeändert` zurückgesetzt.
+
 ## v1.10.0 – 2026-04-27
 
 ### Geändert

@@ -1686,6 +1686,35 @@
     .katalog-sync-update-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
     .katalog-sync-update-text strong { color: #b35200; }
     .katalog-sync-update-text span   { color: var(--text-2); font-size: 11px; }
+    .katalog-sync-export {
+      margin-top: 8px;
+      padding: 8px 10px;
+      border: 1.5px solid #1a7f37;
+      background: #ebfaf0;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+    }
+    .katalog-sync-export-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .katalog-sync-export-text strong { color: #1a7f37; }
+    .katalog-sync-export-text span   { color: var(--text-2); font-size: 11px; }
+    .katalog-export-subtle {
+      background: transparent;
+      border: 1px dashed var(--border-sub);
+      color: var(--text-2);
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      line-height: 1.3;
+    }
+    .katalog-export-subtle:hover {
+      background: var(--hover);
+      color: var(--text);
+      border-color: var(--border-str);
+    }
     .btn-xs { font-size: 11px !important; padding: 1px 8px !important; }
     /* ── Katalog-Sync-Banner (Toolbar) ────────────────────────── */
     .katalog-sync-banner {
@@ -2974,7 +3003,7 @@
 
         <div class="katalog-import-row">
           <button class="btn btn-primary btn-sm" @click="importKatalog()">Importieren</button>
-          <button class="btn btn-sm" style="border:1.5px solid var(--border-str)" @click="exportKatalog()">Exportieren</button>
+          <button class="katalog-export-subtle" @click="exportKatalog()" title="Katalog speichern unter…">Exportieren</button>
         </div>
 
         <!-- Automatische Synchronisation -->
@@ -3008,6 +3037,13 @@
               <span>{{ katalogUpdate && katalogUpdate.version }}</span>
             </div>
             <button class="btn btn-primary btn-sm" style="font-size:11px;padding:2px 10px" @click="applyKatalogUpdate()">Jetzt importieren</button>
+          </div>
+          <div v-if="katalogSyncOrdner && katalogMeta.manuellGeändert" class="katalog-sync-export">
+            <div class="katalog-sync-export-text">
+              <strong>Lokale Änderungen vorhanden</strong>
+              <span>In „{{ katalogSyncOrdner }}" ablegen?</span>
+            </div>
+            <button class="btn btn-primary btn-sm" style="font-size:11px;padding:2px 10px" @click="exportKatalogToFolder()">Jetzt exportieren</button>
           </div>
         </div>
 
@@ -3233,8 +3269,18 @@ const EXPORT_COLS = [
 ];
 
 const STORAGE_KEY = 'uebergabe_v1';
-const VERSION = '1.10.0';
+const VERSION = '1.11.0';
 const CHANGELOG = [
+  {
+    version: '1.11.0',
+    datum: '27.04.2026',
+    änderungen: [
+      'Neuer Export-Hinweis-Block im Katalog-Drawer: Bei lokal geändertem Katalog und verknüpftem Ordner erscheint „Lokale Änderungen vorhanden" mit Button „Jetzt exportieren"',
+      'Persistenter „Exportieren"-Button öffnet jetzt einen Speichern-unter-Dialog (freie Pfad- und Namenswahl) – ideal für Backups oder ad-hoc Sicherungen',
+      'Persistenter Button bewusst dezent gestaltet, damit der Block-Hinweis als Hauptaktion wahrgenommen wird',
+      'Nach erfolgreichem Export wird die „lokal geändert"-Markierung zurückgesetzt',
+    ],
+  },
   {
     version: '1.10.0',
     datum: '27.04.2026',
@@ -5113,7 +5159,8 @@ const app = createApp({
       this._saveTimer = setTimeout(() => { this.savedMsg = ''; }, 2500);
     },
 
-    async exportKatalog() {
+    // Erzeugt das XLSX-Blob inkl. neuer Versions-Metadaten und übernimmt diese in katalogMeta.
+    _buildKatalogPayload() {
       const now = new Date();
       const dateStr = now.getFullYear().toString()
         + String(now.getMonth() + 1).padStart(2, '0')
@@ -5123,8 +5170,6 @@ const app = createApp({
       const version = `${dateStr}-${nrStr}`;
 
       const wb = XLSX.utils.book_new();
-
-      // Meta-Sheet mit Versionsinformationen
       const metaWs = XLSX.utils.aoa_to_sheet([
         ['Datum', dateStr],
         ['Versionsnummer', nextNr],
@@ -5133,7 +5178,6 @@ const app = createApp({
       ]);
       XLSX.utils.book_append_sheet(wb, metaWs, 'Meta');
 
-      // Ein Sheet pro Ebene
       const levels = ['station', 'bauraum', 'funktionsdefinition', 'funktion', 'zustand', 'stellglied'];
       for (const level of levels) {
         const rows = [['Kürzel', 'Langtext']];
@@ -5148,32 +5192,66 @@ const app = createApp({
       this.katalogMeta.version = version;
       this.katalogMeta.versionNr = nextNr;
 
-      // Wenn Ordner verknüpft ist und Schreibrechte vorhanden → direkt dort ablegen
-      const dirHandle = await loadDirectoryHandle();
-      if (dirHandle) {
+      return { blob, fileName };
+    },
+
+    // Persistenter „Exportieren"-Button (Notfall/Backup): Speichern unter… mit freier Pfadwahl.
+    async exportKatalog() {
+      const { blob, fileName } = this._buildKatalogPayload();
+
+      if (window.showSaveFilePicker) {
         try {
-          let perm = await dirHandle.queryPermission({ mode: 'readwrite' });
-          if (perm !== 'granted') {
-            perm = await dirHandle.requestPermission({ mode: 'readwrite' });
-          }
-          if (perm === 'granted') {
-            const fh = await dirHandle.getFileHandle(fileName, { create: true });
-            const writable = await fh.createWritable();
-            await writable.write(blob);
-            await writable.close();
-            this.katalogSyncStatus = 'aktuell';
-            this.katalogSyncMsg = `✓ Exportiert in Ordner „${dirHandle.name}" (${fileName})`;
-            return;
-          }
+          const fh = await window.showSaveFilePicker({
+            suggestedName: fileName,
+            types: [{
+              description: 'BMK-Katalog (Excel)',
+              accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] },
+            }],
+          });
+          const writable = await fh.createWritable();
+          await writable.write(blob);
+          await writable.close();
+          this.katalogMeta.manuellGeändert = false;
+          return;
         } catch (e) {
-          console.error('exportKatalog → Ordner-Schreibvorgang fehlgeschlagen:', e);
-          this.katalogSyncStatus = 'fehler';
-          this.katalogSyncMsg = 'Schreiben in verknüpften Ordner fehlgeschlagen – Datei wird heruntergeladen';
+          if (e.name === 'AbortError') return;
+          console.error('exportKatalog → Save-Picker fehlgeschlagen:', e);
         }
       }
 
-      // Fallback / Standardpfad: klassischer Download
+      // Fallback ohne File System Access API
       this._dl(blob, fileName);
+      this.katalogMeta.manuellGeändert = false;
+    },
+
+    // Block-Aktion: schreibt direkt in den verknüpften Ordner.
+    async exportKatalogToFolder() {
+      const dirHandle = await loadDirectoryHandle();
+      if (!dirHandle) return;
+
+      const { blob, fileName } = this._buildKatalogPayload();
+      try {
+        let perm = await dirHandle.queryPermission({ mode: 'readwrite' });
+        if (perm !== 'granted') {
+          perm = await dirHandle.requestPermission({ mode: 'readwrite' });
+        }
+        if (perm !== 'granted') {
+          this.katalogSyncStatus = 'fehler';
+          this.katalogSyncMsg = 'Kein Schreibzugriff auf Katalog-Ordner';
+          return;
+        }
+        const fh = await dirHandle.getFileHandle(fileName, { create: true });
+        const writable = await fh.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        this.katalogMeta.manuellGeändert = false;
+        this.katalogSyncStatus = 'aktuell';
+        this.katalogSyncMsg = `✓ Exportiert in Ordner „${dirHandle.name}" (${fileName})`;
+      } catch (e) {
+        console.error('exportKatalogToFolder:', e);
+        this.katalogSyncStatus = 'fehler';
+        this.katalogSyncMsg = 'Schreiben in verknüpften Ordner fehlgeschlagen';
+      }
     },
 
     _migrateKuerzel() {
