@@ -1,21 +1,17 @@
 # Changelog
 
-## v1.11.0 – 2026-04-27
+## v1.11.0 – 2026-04-27 · Katalog-Workflow rund um den verknüpften Ordner
 
 ### Neu
 - **Export-Hinweis-Block im Katalog-Drawer**: Sobald der Katalog lokal geändert wurde und ein Ordner verknüpft ist, erscheint der Block „Lokale Änderungen vorhanden" mit Button „Jetzt exportieren" – Pendant zum Import-Hinweis.
-
-### Geändert
-- Persistenter **„Exportieren"-Button** öffnet jetzt einen **„Speichern unter…"-Dialog** (`showSaveFilePicker`) mit freier Pfad- und Namenswahl – ideal für Backups oder ad-hoc Sicherungen.
-- Persistenter Button optisch dezent (gestrichelter Rahmen, sekundärer Stil), damit der Block-Hinweis die primäre Aktion bleibt.
-- Nach erfolgreichem Export wird `katalogMeta.manuellGeändert` zurückgesetzt.
-
-## v1.10.0 – 2026-04-27
+- **Update-Hinweis-Block** beim Klick auf „Prüfen" (↻): Findet die App eine neuere Katalog-Version im verknüpften Ordner, erscheint ein deutlicher Hinweis „Neue Version verfügbar" mit Button „Jetzt importieren". Kein stiller Auto-Import mehr.
 
 ### Geändert
 - **Katalog-Export folgt dem verknüpften Ordner**: Ist ein Katalog-Ordner verknüpft, wird der Export direkt dort abgelegt statt im Download-Verzeichnis. Ohne Verknüpfung bleibt der klassische Download.
 - **Ordner-Verknüpfung verlangt jetzt Schreibrechte** (`readwrite`) – damit der Export in den Ordner schreiben kann. Bestehende Verknüpfungen werden beim ersten Export einmalig hochgestuft.
-- **Kein stiller Auto-Import mehr**: Findet die App beim „Prüfen" (↻) eine neuere Katalog-Version im verknüpften Ordner, erscheint ein deutlicher Hinweis-Block „Neue Version verfügbar" mit Button „Jetzt importieren". Erst der Klick darauf übernimmt die Datei.
+- Persistenter **„Exportieren"-Button** öffnet jetzt einen **„Speichern unter…"-Dialog** (`showSaveFilePicker`) mit freier Pfad- und Namenswahl – ideal für Backups oder ad-hoc Sicherungen.
+- Persistenter Button optisch dezent (gestrichelter Rahmen, sekundärer Stil), damit der Block-Hinweis die primäre Aktion bleibt.
+- Nach erfolgreichem Export wird `katalogMeta.manuellGeändert` zurückgesetzt.
 
 ## v1.9.0 – 2026-04-23
 
